@@ -12,6 +12,7 @@
 read_file(Stream) :-
 	see(Stream),
 	read_terms(Terms),
+	analyse(Terms).
 
 % read_terms(-Terms)
 %   Unify Terms with the list of terms (in order of appearance)
@@ -28,4 +29,5 @@ read_terms([H | T]) :-
 %   Analyse all Terms using various metrics.
 analyse(T) :-
 	halstead_analyse(T).
+
 
