@@ -1,28 +1,31 @@
-% Read a file or stdin and analyse all read terms.
+% "Parser" module. Reads all terms from a given file and
+% computes various metrics of the code.
 
+:- [halstead].
 
-read_file(Filename) :-
-	see(Filename), 
-	read_terms.
+% This module is only suitable for metrics that operate on syntactic
+% features of the code and not whitespaces, comments etc.  In order to
+% compute such metrics, parse the files with another module.
 
-% read_terms
-%   Read all terms from the currently seen stream
-%   and analyse each of them.
-read_terms :-
+% read_file(+InputStream)
+%   Reads all terms from InputStream and analyse each of them.
+read_file(Stream) :-
+	see(Stream),
+	read_terms(Terms),
+
+% read_terms(-Terms)
+%   Unify Terms with the list of terms (in order of appearance)
+%   in the currently seen stream.
+read_terms([]) :-
 	read(end_of_file),
 	!, 
 	seen.               % End of input.
-read_terms :-
-	read(Term),
-	analyse(Term),
-	read_terms.
+read_terms([H | T]) :-
+	read(H),
+	read_terms(T).
 
-% analyse(Term)
-% Perform analysis of the term T using various metric engines.
-analyse([]) :- !.
-analyse([H | T]) :-
-	analyse(H),
-	analyse(T).
+% analyse(+Terms)
+%   Analyse all Terms using various metrics.
 analyse(T) :-
-	
-	
+	halstead_analyse(T).
+
