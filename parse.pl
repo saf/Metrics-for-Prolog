@@ -9,21 +9,24 @@
 
 % read_file(+InputStream)
 %   Reads all terms from InputStream and analyse each of them.
-read_file(Stream) :-
-	see(Stream),
+read_file(Filename) :-
+	consult(Filename),
+	see(Filename),
 	read_terms(Terms),
 	analyse(Terms).
 
 % read_terms(-Terms)
 %   Unify Terms with the list of terms (in order of appearance)
 %   in the currently seen stream.
-read_terms([]) :-
-	read(end_of_file),
-	!, 
-	seen.               % End of input.
-read_terms([H | T]) :-
-	read(H),
-	read_terms(T).
+read_terms(T) :-
+	read(Term),
+	(Term == end_of_file ->
+	 T = [],
+	 seen
+	;
+	 T = [Term | L],
+	 read_terms(L)
+	).
 
 % analyse(+Terms)
 %   Analyse all Terms using various metrics.

@@ -7,10 +7,12 @@
 halstead_analyse(Terms) :-
 	empty_vocab(E),
 	terms_vocab(Terms, E, V),
+	print(V), nl, 
 	all_operands(V, AllOperands),
 	all_operators(V, AllOperators),
 	unique_operands(V, UniqueOperands),
 	unique_operators(V, UniqueOperators),
+	print((AllOperators, AllOperands, UniqueOperators, UniqueOperands)), nl,
 	Vocabulary is UniqueOperators + UniqueOperands, 
 	Length is AllOperators + AllOperands,
 	Volume is Length * log(Vocabulary) / log(2),
@@ -21,7 +23,7 @@ halstead_analyse(Terms) :-
 	
 
 % empty_vocab
-%   Defines what is an empty vocabulary.
+%   Defines what an empty vocabulary is.
 empty_vocab(([], [])).
 
 % terms_vocab(+Terms, +OldVocab, -NewVocab)
@@ -44,6 +46,12 @@ subterms_vocab([H | T], V, W) :-
 
 % subterm_vocab(+Term, +OldVocab, -NewVocab)
 subterm_vocab(T, V, W) :-
+	nonvar(T),
+	T = [H | L], 
+	!,                             % Red cut in fact, but we want
+	add_operator(V, '[|]', V1),    % special handling here.
+	subterms_vocab([H, L], V1, W).
+subterm_vocab(T, V, W) :-
 	nonvar(T), 
 	T =.. [S | Args],
 	current_op(_, _, S),
@@ -51,7 +59,8 @@ subterm_vocab(T, V, W) :-
 	add_operator(V, S, V1),
 	subterms_vocab(Args, V1, W).
 subterm_vocab(T, V, W) :-
-	nonvar(T), 
+	nonvar(T),
+	!, 
 	T =.. [S | Args],
 	\+ current_op(_, _, S),
 	add_operand(V, S, V1),
@@ -61,6 +70,8 @@ subterm_vocab(T, V, W) :-
 	var(T),
 	!,
 	add_operand(V, T, W).
+
+% Vocabulary management
 
 % add_operator(+OldVocab, +Operator, -NewVocab)
 add_operator((Operators, Operands), Op, (NewOperators, Operands)) :-

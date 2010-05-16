@@ -101,19 +101,18 @@ of the predicate symbol $T$, and $x_1, \dots, x_k$ are its
 When we thus write:
 $$A\,\, is\,\, B + 1,$$ 
 Prolog understands it as nothing but:
-$$is(A, +(B, 1)).$$ 
-When one takes into account the fact that function
-names in Java function calls are considered operands, it is therefore
-tempting to view all terms as operands.
+$$is(A, +(B, 1)).$$ When one takes into account the fact that function
+names in Java function calls are commonly considered to be operands,
+it is therefore tempting to view all terms as operands.
 
 To add to this, Prolog is often used to write meta-programs --
-programs that operate on Prolog source code. Some programs may
+programs that operate on Prolog source code. Some programs may even
 manipulate parts of themselves during normal operation, further
 blurring the notions of operators and operands. Of course,
 \pname\ itself is an example of a meta-program.
 
 In \pname, I have chosen a simple way of dividing tokens into operands
-and operators. In a few words, it can be worded as \emph{If it looks
+and operators. In a few words, it can be described as \emph{If it looks
   like an operator, it is an operator}. Operators are therefore all
 symbols that may be used without the parenthetical notation $T(x, y)$
 and may be instead written as: 
@@ -139,7 +138,10 @@ for example:
 \begin{itemize}
 \item the rule-building predicate :-$/2$,
 \item the conjunction and disjunction operators $,/2$ and $;/2$,
-\item arithmetic operators, including $is/2$, $+/2$, $*/2$.
+\item arithmetic operators, including $is/2$, $+/2$, $*/2$, 
+\item arithmetic relations, such as $=</2$, 
+\item bitwise and logical operators, including the logical alternative
+  operator $\//2$ and the bitwise shift operator $<</2$.
 \end{itemize}
 
 ISO-Prolog contains a mechanism that allows the user to define their
@@ -158,10 +160,13 @@ treated as operators:
   will be viewed as a single operator,
 \item the dot that stands after every Prolog term will be viewed as a
   single operator, by analogy to C's semi-colon,
-\item the list notation $[H | T]$ will be naturally treated as one
-  operator, as it is nothing but syntactical sugar for the list
-  concatenation operator $./2$.
+\item the list notation \texttt{[H | T]} will be treated as one
+  operator.
 \end{itemize}
+
+\subsection{Variable distinctiveness}
+
+
 
 \end{multicols}
 
