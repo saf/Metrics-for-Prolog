@@ -28,6 +28,31 @@ Blah blah blah
 \end{abstract}
 \begin{multicols}{2}
 
+
+\section{Introduction}
+
+\section{The Prolog language}
+
+Prolog is a declarative programming language, whose syntax is based on
+first-order logic. Since its creation around the year 1972, it has
+found multiple applications in the fields of artificial intelligence
+and natural language processing.
+
+Prolog programs consist of definitions of \emph{relations} on
+\emph{terms}. Intuitively, a run of the program seeks to determine
+whether a relation holds for the given arguments, or to find a set of
+arguments such that a given relation holds. In this document, I will
+briefly describe the basics of logic programming to the extent that is
+needed to understand the problems of adapting code metrics to it. A
+thorough introduction to the core syntax and semantics of Prolog
+itself can be found in the classic book by Clocksin and Mellish
+\cite{clocksin}.
+
+
+
+\section{Local complexity measure}
+
+
 \section{Halstead's metrics}
 
 Halstead \cite{halstead} proposed metrics for analysing the effort one
@@ -173,6 +198,10 @@ treated as operators:
 \newpage
 
 \begin{thebibliography}{halstead}
+\bibitem{clocksin}
+  W.F. Clocksin, C.S. Mellish, 
+  \emph{Programming in Prolog}, 
+  Springer-Verlag Telos, 1994.
 \bibitem{halstead}
   M.H. Halstead, 
   \emph{Elements of Software Science}, 
