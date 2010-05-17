@@ -5,13 +5,14 @@
 % halstead_analyse(+Terms)
 %   Perform analysis of Terms and print out the results.
 halstead_analyse(Terms) :-
-	empty_vocab(E),
-	terms_vocab(Terms, E, V),
-	print(V), nl, 
-	all_operands(V, AllOperands),
-	all_operators(V, AllOperators),
-	unique_operands(V, UniqueOperands),
-	unique_operators(V, UniqueOperators),
+	terms_vocabs(Terms, [], Vocabs),
+	print(Vocabs), nl,
+	summary_vocab(Vocabs, Summary),
+	print('Summary: '), print(Summary), nl, 
+	all_operands(Summary, AllOperands),
+	all_operators(Summary, AllOperators),
+	unique_operands(Summary, UniqueOperands),
+	unique_operators(Summary, UniqueOperators),
 	print((AllOperators, AllOperands, UniqueOperators, UniqueOperands)), nl,
 	Vocabulary is UniqueOperators + UniqueOperands, 
 	Length is AllOperators + AllOperands,
@@ -21,21 +22,39 @@ halstead_analyse(Terms) :-
 	Time is Effort / 18,
 	print((Vocabulary, Length, Volume, Difficulty, Effort, Time)), nl.
 	
-
 % empty_vocab
 %   Defines what an empty vocabulary is.
 empty_vocab(([], [])).
 
-% terms_vocab(+Terms, +OldVocab, -NewVocab)
-terms_vocab([], V, V).
-terms_vocab([H | T], V, W) :-
-	term_vocab(H, V, N),
-	terms_vocab(T, N, W).
+% terms_vocabs(+Terms, -Vocabs)
+%   Vocabs is a list of the form [ voc(Predicate, Vocabulary) | ... ].
+terms_vocabs([], Vocabs, Vocabs).
+terms_vocabs([H | T], Vocabs, NewVocabs) :-
+	term_vocab(H, Pred, Vocab), 
+	merge_vocabs(Vocabs, Pred, Vocab, Merged), 
+	terms_vocabs(T, Merged, NewVocabs).
 
-% term_vocab(+Term, +OldVocab, -NewVocab)
-term_vocab(T, V, W) :-
-	subterm_vocab(T, V, X),
-	add_operator(X, '.', W).
+% term_vocab(+Term, -PredName, -Vocab)
+term_vocab(T, "<commands>", V) :-
+	functor(T, :-, 1), 
+	!, 
+	empty_vocab(E), 
+	subterm_vocab(T, E, W),
+	add_operator(W, '.', V).
+term_vocab(T, S/Arity, V) :-
+	functor(T, :-, 2), 
+	!, 
+	T =.. [:-, L | _], 
+	functor(L, S, Arity), 
+	empty_vocab(E), 
+	subterm_vocab(T, E, W), 
+	add_operator(W, '.', V).
+term_vocab(T, S/Arity, V) :-
+	\+ functor(T, :-, _), 
+	functor(T, S, Arity), 
+	empty_vocab(E), 
+	subterm_vocab(T, E, W), 
+	add_operator(W, '.', V).
 
 % subterms_vocab(+Terms, +OldVocab, -NewVocab)
 %   Terms is a list of subterms to analyse.
@@ -118,3 +137,40 @@ snd_sum([(_, B) | T], S) :-
 	snd_sum(T, TS),
 	S is B + TS.
 
+% summary_vocab(+Vocabs, +SummaryVocab)
+%   Merge all Vocabs.
+summary_vocab(Vocab, Summary) :-
+	summary_vocab(Vocab, ([], []), Summary).
+% summary_vocab(+Vocabs, +SummarySoFar, -Summary)
+summary_vocab([], S, S).
+summary_vocab([voc(_, (Oprs, Opnds)) | T], (TOprs, TOpnds), Summary) :-
+	merge_vocab(Oprs, TOprs, SOprs), 
+	merge_vocab(Opnds, TOpnds, SOpnds), 
+	summary_vocab(T, (SOprs, SOpnds), Summary).
+
+% merge_vocabs(+OldVocabs, +Predicate, +Vocab, -NewVocabs)
+%   Merge voc(Predicate, Vocab) into OldVocabs.
+merge_vocabs([], P, V, [voc(P, V)]).
+merge_vocabs([voc(P, (Oprs, Opnds)) | T], P, (POprs, POpnds), [voc(P, (NOprs, NOpns)) | T]) :-
+	!, 
+	merge_vocab(Oprs, POprs, NOprs), 
+	merge_vocab(Opnds, POpnds, NOpns).
+merge_vocabs([voc(C, CV) | T], P, V, [voc(C, CV) | NT]) :-
+	C \= P, 
+	merge_vocabs(T, P, V, NT).
+
+% merge_vocab(+V1, +V2, -Merged)
+merge_vocab([], V2, V2).
+merge_vocab([H | T], V2, Merged) :-
+	merge_entry(V2, H, M), 
+	merge_vocab(T, M, Merged).
+
+% merge_entry(+Vocabulary, +Entry, -NewVocabulary)
+merge_entry([], Entry, [Entry]).
+merge_entry([(Key, Value) | T], (EKey, EVal), [(Key, NVal) | T]) :-
+	Key == EKey, 
+	!, 
+	NVal is Value + EVal.
+merge_entry([(Key, Val) | T], (EKey, EVal), [(Key, Val) | NT]) :-
+	Key \== EKey, 
+	merge_entry(T, (EKey, EVal), NT).
