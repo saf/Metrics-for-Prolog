@@ -6,21 +6,10 @@
 %   Perform analysis of Terms and print out the results.
 halstead_analyse(Terms) :-
 	terms_vocabs(Terms, [], Vocabs),
-	print(Vocabs), nl,
 	summary_vocab(Vocabs, Summary),
-	print('Summary: '), print(Summary), nl, 
-	all_operands(Summary, AllOperands),
-	all_operators(Summary, AllOperators),
-	unique_operands(Summary, UniqueOperands),
-	unique_operators(Summary, UniqueOperators),
-	print((AllOperators, AllOperands, UniqueOperators, UniqueOperands)), nl,
-	Vocabulary is UniqueOperators + UniqueOperands, 
-	Length is AllOperators + AllOperands,
-	Volume is Length * log(Vocabulary) / log(2),
-	Difficulty is (UniqueOperators * AllOperands) / (UniqueOperands * 2),
-	Effort is Volume * Difficulty,
-	Time is Effort / 18,
-	print((Vocabulary, Length, Volume, Difficulty, Effort, Time)), nl.
+	vocab_metrics(Summary, Metrics), 
+	print(Metrics), nl, 
+	print_predicate_metrics(Vocabs).
 	
 % empty_vocab
 %   Defines what an empty vocabulary is.
@@ -66,13 +55,14 @@ subterms_vocab([H | T], V, W) :-
 % subterm_vocab(+Term, +OldVocab, -NewVocab)
 subterm_vocab(T, V, W) :-
 	nonvar(T),
-	T = [H | L], 
+	T == [H | L], 
 	!,                             % Red cut in fact, but we want
 	add_operator(V, '[|]', V1),    % special handling here.
 	subterms_vocab([H, L], V1, W).
 subterm_vocab(T, V, W) :-
 	nonvar(T), 
 	T =.. [S | Args],
+	atom(S), 
 	current_op(_, _, S),
 	!,
 	add_operator(V, S, V1),
@@ -81,7 +71,7 @@ subterm_vocab(T, V, W) :-
 	nonvar(T),
 	!, 
 	T =.. [S | Args],
-	\+ current_op(_, _, S),
+	\+ (atom(S), current_op(_, _, S)), 
 	add_operand(V, S, V1),
 	add_operator(V1, '()', V2), 
 	subterms_vocab(Args, V2, W).
@@ -109,33 +99,6 @@ add_occurrence([(HEl, HNo) | T], El, [(HEl, NHNo) | T]) :-
 add_occurrence([(HEl, HNo) | T], El, [(HEl, HNo) | NT]) :-
 	HEl \== El,
 	add_occurrence(T, El, NT).
-
-
-% all_operands(+V, -AO)
-%   Unify AO with the number of all operands in the vocabulary V
-all_operands((_, Operands), AO) :-
-	snd_sum(Operands, AO).
-
-% all_operators(+V, -AO)
-%   Unify AO with the number of all operators in the vocabulary V
-all_operators((Operators, _), AO) :-
-	snd_sum(Operators, AO).
-
-% unique_operators(+V, -UO)
-unique_operators((Operators, _), UO) :-
-	length(Operators, UO).
-
-% unique_operands(+V, -UO)
-unique_operands((_, Operands), UO) :-
-	length(Operands, UO).
-
-% snd_sum(+List, -Sum)
-%   List is a list of pairs (A, B), where B is a number. Compute the
-%   Sum of all B's on the list.
-snd_sum([], 0).
-snd_sum([(_, B) | T], S) :-
-	snd_sum(T, TS),
-	S is B + TS.
 
 % summary_vocab(+Vocabs, +SummaryVocab)
 %   Merge all Vocabs.
@@ -174,3 +137,53 @@ merge_entry([(Key, Value) | T], (EKey, EVal), [(Key, NVal) | T]) :-
 merge_entry([(Key, Val) | T], (EKey, EVal), [(Key, Val) | NT]) :-
 	Key \== EKey, 
 	merge_entry(T, (EKey, EVal), NT).
+
+
+% print_predicate_metrics(+Vocabs) 
+%   Print metrics gathered from Vocabs.
+print_predicate_metrics([]).
+print_predicate_metrics([voc(Pred, V) | T]) :-
+	vocab_metrics(V, M), 
+	print(Pred), print(': '), nl,
+	print(M), nl,
+	print_predicate_metrics(T).
+
+% vocab_metrics(+Vocab, -Metrics)
+vocab_metrics(V, [length(Length), vocabulary(Vocabulary), 
+   volume(Volume), difficulty(Difficulty), effort(Effort), time(Time)]) :-
+	all_operands(V, AllOperands),
+	all_operators(V, AllOperators),
+	unique_operands(V, UniqueOperands),
+	unique_operators(V, UniqueOperators),
+	Vocabulary is UniqueOperators + UniqueOperands, 
+	Length is AllOperators + AllOperands,
+	Volume is Length * log(Vocabulary) / log(2),
+	Difficulty is (UniqueOperators * AllOperands) / (UniqueOperands * 2),
+	Effort is Volume * Difficulty,
+	Time is Effort / 18.
+
+% all_operands(+V, -AO)
+%   Unify AO with the number of all operands in the vocabulary V
+all_operands((_, Operands), AO) :-
+	snd_sum(Operands, AO).
+
+% all_operators(+V, -AO)
+%   Unify AO with the number of all operators in the vocabulary V
+all_operators((Operators, _), AO) :-
+	snd_sum(Operators, AO).
+
+% unique_operators(+V, -UO)
+unique_operators((Operators, _), UO) :-
+	length(Operators, UO).
+
+% unique_operands(+V, -UO)
+unique_operands((_, Operands), UO) :-
+	length(Operands, UO).
+
+% snd_sum(+List, -Sum)
+%   List is a list of pairs (A, B), where B is a number. Compute the
+%   Sum of all B's on the list.
+snd_sum([], 0).
+snd_sum([(_, B) | T], S) :-
+	snd_sum(T, TS),
+	S is B + TS.
