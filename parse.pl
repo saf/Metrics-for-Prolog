@@ -31,6 +31,6 @@ read_terms(T) :-
 % analyse(+Terms)
 %   Analyse all Terms using various metrics.
 analyse(T) :-
-%	halstead_analyse(T), 
+	halstead_analyse(T), 
 	local_analyse(T).
 

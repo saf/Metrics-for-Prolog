@@ -1,7 +1,5 @@
 % Markusz & Kaposi's local complexity measure for Prolog.
 
-
-
 % local_analyse(+Terms)
 %   Perform local complexity analysis of Terms
 local_analyse(Terms) :-
@@ -121,38 +119,52 @@ subproblems(:-(_, R), C) :-
 
 % count_subproblems(+Term, +Accumulator, -Subproblems)
 count_subproblems(T, A, S) :-
-	functor(T, ',', 2),
-	!, 
-	T =.. [',', X, Y], 
-	NA is A + 1,
-	count_subproblems(X, NA, NNA),
-	count_subproblems(Y, NNA, S).
-count_subproblems(T, A, A) :-
-	\+ functor(T, ',', 2).
+	(functor(T, ',', 2);
+	 functor(T, ';', 2);
+	 functor(T, '->', 2);
+	 functor(T, '->*', 2)), 
+	!,                       % Red cut for simplicity.
+	T =.. [_, X, Y], 
+	count_subproblems(X, A, NA),
+	count_subproblems(Y, NA, S).
+count_subproblems(T, A, C) :-
+	C is A + 1.
 
 % relations_complexity(+T, -C)
 %    Unify C with the complication coefficient of the partition.
-%    Each recursive call adds 2 here.
+%    Each recursive call adds 2 here. Each disjunction operator (;), 
+%    or implication operator (->, ->*) adds 1.
 relations_complexity(:-(L, R), C) :-
 	functor(L, P, A),
+	!, 
 	relations_complexity([R], P/A, 0, C).
+relations_complexity(_, 0).         % Red cut for simplicity.
 
-relations_complexity(T, P/A, Acc, 0) :-
-	%print((T, P/A, Acc)), nl, nl,
-	fail.
 relations_complexity([], _, C, C).
 relations_complexity([H | T], P/A, Acc, C) :-
+	var(H),
+	!,
+	relations_complexity(T, P/A, Acc, C).
+relations_complexity([H | T], P/A, Acc, C) :-
+	nonvar(H), 
 	functor(H, P, A), 
 	!, 
 	NAcc is Acc + 2,
 	relations_complexity(T, P/A, NAcc, C).
-relations_complexity([H | T], P/A, C, C) :-
-	\+ functor(H, P, A), 
-	T =.. [_, []], 
-	!.
 relations_complexity([H | T], P/A, Acc, C) :-
-	\+ functor(T, P, A), 
-	T =.. [_ | Args], 
+	nonvar(H),
+	(functor(H, '->', 2); functor(H, ';', 2); functor(H, '->*', 2)),
+	H =.. [_ | Args], 
+	NAcc is Acc + 1,
+	relations_complexity(Args, P/A, NAcc, NNAcc),
+	relations_complexity(T, P/A, NNAcc, C).
+relations_complexity([H | T], P/A, Acc, C) :-
+	nonvar(H),
+	functor(H, S, Ar),
+	(P, A) \= (S, Ar),
+	S \= '->',
+	S \= ';', 
+	H =.. [S | Args], 
 	relations_complexity(Args, P/A, Acc, NAcc),
 	relations_complexity(T, P/A, NAcc, C).
 
