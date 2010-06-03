@@ -6,7 +6,8 @@
 %   Perform local complexity analysis of Terms
 local_analyse(Terms) :-
 	predicate_complexity(Terms, AnnotatedPredicates), 
-	print(AnnotatedPredicates).
+	print(AnnotatedPredicates),
+	nl.
 
 % predicate_complexity(+Terms, -Predicates)
 predicate_complexity(Terms, AnnotatedPredicates) :-
@@ -62,41 +63,98 @@ merge_predicate([pred(R, CR) | T], part(P, C), [pred(R, CR) | NT]) :-
 % partition_complexity(+Term, -Complexity)
 %   The local complexity value of the given partition.
 partition_complexity(T, C) :-
-	new_entities(T, P1), 
-	subproblems(T, P2), 
-	relations_complexity(T, P3), 
-	new_variables(T, P4), 
-	C is P1 + P2 + P3 + P4.
+	new_entities(T, P1),
+	subproblems(T, P2),
+	relations_complexity(T, P3),
+	new_variables(T, P4),
+	C = P1 + P2 + P3 + P4.
 
 % new_entities(+Term, -C)
 %    Unify C with the number of new data entities introduced in 
 %    the positive side of the partition.
-new_entities(_, 0).
+%    In other words, C is the number of non-trivial variables in
+%    the left side of the partition.
+new_entities(:-(L, _), C) :-
+        L =.. [_ | Args],
+	count_nontrivial_variables(Args, 0, C).
+
+% count_nontrivial_variables(+Terms, +Accumulator, -Variables)
+%   Count all variables inside Terms, excluding Terms themselves
+%   if they are variables.
+count_nontrivial_variables([], A, A).
+count_nontrivial_variables([H | T], A, C) :-
+	var(H),
+	!,
+	count_nontrivial_variables(T, A, C).
+count_nontrivial_variables([H | T], A, C) :-
+	nonvar(H),
+	count_variables([H], 0, V),
+	NA is A + V,
+	count_nontrivial_variables(T, NA, C).
+
+% count_variables(+Terms, +Accumulator, -Variables)
+%   Count all variables in Terms.
+count_variables([], A, A) :- !.
+count_variables([H | T], A, V) :-
+	var(H),
+	!,
+	NA is A + 1,
+	count_variables(T, NA, V).
+count_variables([H | T], A, V) :-
+	nonvar(H), 
+	functor(H, S, _),
+	atom(S),
+	!,
+	H =.. [S | Args],
+	count_variables(Args, 0, NV),
+	NA is A + NV,
+	count_variables(T, NA, V).
+count_variables([H | T], A, V) :-
+	nonvar(H),
+	(\+functor(H, S, _) ; functor(H, S, _), \+ atom(S)), 
+	count_variables(T, A, V).
 
 % subproblems(+Term, -C)
 %    Unify C with the number of negative atoms in the partition.
-subproblems(_, 0).
+subproblems(:-(_, R), C) :-
+        count_subproblems(R, 0, C).
+
+% count_subproblems(+Term, +Accumulator, -Subproblems)
+count_subproblems(T, A, S) :-
+	functor(T, ',', 2),
+	!, 
+	T =.. [',', X, Y], 
+	NA is A + 1,
+	count_subproblems(X, NA, NNA),
+	count_subproblems(Y, NNA, S).
+count_subproblems(T, A, A) :-
+	\+ functor(T, ',', 2).
 
 % relations_complexity(+T, -C)
 %    Unify C with the complication coefficient of the partition.
 %    Each recursive call adds 2 here.
 relations_complexity(:-(L, R), C) :-
 	functor(L, P, A),
-	relations_complexity(R, P/A, 0, C).
+	relations_complexity([R], P/A, 0, C).
 
-relations_complexity(T, P/A, PC, C) :-
-	functor(T, P, A), 
+relations_complexity(T, P/A, Acc, 0) :-
+	%print((T, P/A, Acc)), nl, nl,
+	fail.
+relations_complexity([], _, C, C).
+relations_complexity([H | T], P/A, Acc, C) :-
+	functor(H, P, A), 
 	!, 
-	C is PC + 2.
-relations_complexity(T, P/A, C, C) :-
-	\+ functor(T, P, A), 
+	NAcc is Acc + 2,
+	relations_complexity(T, P/A, NAcc, C).
+relations_complexity([H | T], P/A, C, C) :-
+	\+ functor(H, P, A), 
 	T =.. [_, []], 
 	!.
-relations_complexity(T, P/A, PC, C) :-
+relations_complexity([H | T], P/A, Acc, C) :-
 	\+ functor(T, P, A), 
-	T =.. [_, H | L], 
-	relations_complexity(H, P/A, PC, NPC), % A bit of a hack here. Analyse all arguments
-	relations_complexity(L, P/A, NPC, C).  % by passing a list of them to relations_complexity.
+	T =.. [_ | Args], 
+	relations_complexity(Args, P/A, Acc, NAcc),
+	relations_complexity(T, P/A, NAcc, C).
 
 % new_variables(+Term, -C) 
 %   Unify C with the number of all new variables in the negative 
