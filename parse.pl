@@ -1,7 +1,7 @@
 % "Parser" module. Reads all terms from a given file and
 % computes various metrics of the code.
 
-:- [xml_output, local, halstead].
+:- [xml_output, links, local, halstead].
 
 % This module is only suitable for metrics that operate on syntactic
 % features of the code and not whitespaces, comments etc.  In order to
@@ -31,7 +31,8 @@ read_terms(T) :-
 % analyse(+Terms)
 %   Analyse all Terms using various metrics.
 analyse(T) :-
-	print_xml_header, 
+	print_xml_header,
+	links_analyse(T), 
 	halstead_analyse(T), 
 	local_analyse(T),
 	print_xml_footer.

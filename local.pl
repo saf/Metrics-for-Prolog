@@ -1,5 +1,7 @@
 % Markusz & Kaposi's local complexity measure for Prolog.
 
+:- module(local, [local_analyse/1]).
+
 % local_analyse(+Terms)
 %   Perform local complexity analysis of Terms
 local_analyse(Terms) :-
@@ -32,7 +34,7 @@ partitions_complexity([H | T], [part(Pred, C) | AT]) :-
 %   name and arity of the defined relation.
 predicate_name(:-(C, _), N/A) :-
 	functor(C, N, A).
-	
+
 % merge_predicates(+Partitions, -Predicates)
 %   Complexity values of Partitions are merged for 
 %   repeating symbol/arity values.
@@ -122,18 +124,18 @@ count_subproblems(T, A, S) :-
 	(functor(T, ',', 2);
 	 functor(T, ';', 2);
 	 functor(T, '->', 2);
-	 functor(T, '->*', 2)), 
+	 functor(T, '*->', 2)), 
 	!,                       % Red cut for simplicity.
 	T =.. [_, X, Y], 
 	count_subproblems(X, A, NA),
 	count_subproblems(Y, NA, S).
-count_subproblems(T, A, C) :-
+count_subproblems(_, A, C) :-
 	C is A + 1.
 
 % relations_complexity(+T, -C)
 %    Unify C with the complication coefficient of the partition.
 %    Each recursive call adds 2 here. Each disjunction operator (;), 
-%    or implication operator (->, ->*) adds 1.
+%    or implication operator (->, *->) adds 1.
 relations_complexity(:-(L, R), C) :-
 	functor(L, P, A),
 	!, 
@@ -153,7 +155,7 @@ relations_complexity([H | T], P/A, Acc, C) :-
 	relations_complexity(T, P/A, NAcc, C).
 relations_complexity([H | T], P/A, Acc, C) :-
 	nonvar(H),
-	(functor(H, '->', 2); functor(H, ';', 2); functor(H, '->*', 2)),
+	(functor(H, '->', 2); functor(H, ';', 2); functor(H, '*->', 2)),
 	H =.. [_ | Args], 
 	NAcc is Acc + 1,
 	relations_complexity(Args, P/A, NAcc, NNAcc),
@@ -163,7 +165,8 @@ relations_complexity([H | T], P/A, Acc, C) :-
 	functor(H, S, Ar),
 	(P, A) \= (S, Ar),
 	S \= '->',
-	S \= ';', 
+	S \= ';',
+	S \= '*->', 
 	H =.. [S | Args], 
 	relations_complexity(Args, P/A, Acc, NAcc),
 	relations_complexity(T, P/A, NAcc, C).

@@ -6,8 +6,8 @@
 %   Perform analysis of Terms and print out the results.
 halstead_analyse(Terms) :-
 	terms_vocabs(Terms, [], Vocabs),
-	summary_vocab(Vocabs, Summary),
-	vocab_metrics(Summary, Metrics),
+	%summary_vocab(Vocabs, Summary),
+	%vocab_metrics(Summary, Metrics),   % Global metrics commented out.
 	xml_print_header, 
 	%xml_print_metrics(Metrics),
 	xml_print_predicate_metrics(Vocabs),
