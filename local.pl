@@ -3,14 +3,14 @@
 % local_analyse(+Terms)
 %   Perform local complexity analysis of Terms
 local_analyse(Terms) :-
-	predicate_complexity(Terms, AnnotatedPredicates), 
-	print(AnnotatedPredicates),
-	nl.
+	predicate_complexity(Terms, AnnotatedPredicates),
+	xml_print_header, 
+	xml_print_result(AnnotatedPredicates),
+	xml_print_footer.
 
 % predicate_complexity(+Terms, -Predicates)
 predicate_complexity(Terms, AnnotatedPredicates) :-
 	partitions_complexity(Terms, AnnotatedTerms), 
-	print(AnnotatedTerms), nl, 
 	merge_predicates(AnnotatedTerms, AnnotatedPredicates).
 
 % partitions_complexity(+Terms, -AnnotatedTerms) 
@@ -220,3 +220,44 @@ eqmember([H | _], El) :-
 eqmember([H | T], El) :-
 	H \== El, 
 	eqmember(T, El).
+
+
+% XML printing
+
+xml_print_header :-
+	print('  <local_complexity>'), nl.
+
+xml_print_footer :-
+	print('  </local_complexity>'), nl.
+
+% print_result(+Terms)
+%   Print XML for the result of the analysis.
+
+xml_print_result([]).
+xml_print_result([H | T]) :-
+	xml_print_predicate(H), 
+	xml_print_result(T).
+
+xml_print_predicate(pred(P/A, Partitions)) :-
+	print('    <predicate name="'),
+	print(P/A),
+	print('">'),
+	nl,
+	xml_print_partitions(Partitions, 0),
+	print('    </predicate>'),
+	nl.
+
+xml_print_partitions([], _).
+xml_print_partitions([P1+P2+P3+P4 | T], Id) :-
+	print('       <partition id="'),
+	print(Id),
+	print('">'),
+	nl,
+	print('          <new_entities>'),   print(P1), print('</new_entities>'),   nl,
+	print('          <subproblems>'),    print(P2), print('</subproblems>'),    nl, 
+	print('          <relation_compl>'), print(P3), print('</relation_compl>'), nl,
+	print('          <new_variables>'),  print(P4), print('</new_variables>'),  nl,
+	print('       </partition>'),
+	nl, 
+	NewId is Id + 1, 
+	xml_print_partitions(T, NewId).

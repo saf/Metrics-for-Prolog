@@ -7,9 +7,11 @@
 halstead_analyse(Terms) :-
 	terms_vocabs(Terms, [], Vocabs),
 	summary_vocab(Vocabs, Summary),
-	vocab_metrics(Summary, Metrics), 
-	print(Metrics), nl, 
-	print_predicate_metrics(Vocabs).
+	vocab_metrics(Summary, Metrics),
+	xml_print_header, 
+	%xml_print_metrics(Metrics),
+	xml_print_predicate_metrics(Vocabs),
+	xml_print_footer.
 	
 % empty_vocab
 %   Defines what an empty vocabulary is.
@@ -139,15 +141,6 @@ merge_entry([(Key, Val) | T], (EKey, EVal), [(Key, Val) | NT]) :-
 	merge_entry(T, (EKey, EVal), NT).
 
 
-% print_predicate_metrics(+Vocabs) 
-%   Print metrics gathered from Vocabs.
-print_predicate_metrics([]).
-print_predicate_metrics([voc(Pred, V) | T]) :-
-	vocab_metrics(V, M), 
-	print(Pred), print(': '), nl,
-	print(M), nl,
-	print_predicate_metrics(T).
-
 % vocab_metrics(+Vocab, -Metrics)
 vocab_metrics(V, [length(Length), vocabulary(Vocabulary), 
    volume(Volume), difficulty(Difficulty), effort(Effort), time(Time)]) :-
@@ -187,3 +180,37 @@ snd_sum([], 0).
 snd_sum([(_, B) | T], S) :-
 	snd_sum(T, TS),
 	S is B + TS.
+
+% XML printing
+
+xml_print_header :-
+	print('  <halstead>'),
+	nl.
+
+xml_print_footer :-
+	print('  </halstead>'),
+	nl.
+
+% print_predicate_metrics(+Vocabs) 
+%   Print metrics gathered from Vocabs.
+xml_print_predicate_metrics([]).
+xml_print_predicate_metrics([voc(Pred, V) | T]) :-
+	vocab_metrics(V, M), 
+	print('    <predicate name="'),
+	print(Pred),
+	print('">'),
+	nl, 
+	xml_print_metrics(M),
+	print('    </predicate>'),
+	nl, 
+	xml_print_predicate_metrics(T).
+
+xml_print_metrics([]).
+xml_print_metrics([H | T]) :-
+	H =.. [Name, Value],
+	print('      <'), print(Name), print('>'),
+	print(Value),
+	print('</'), print(Name), print('>'),
+	nl,
+	xml_print_metrics(T).
+	
