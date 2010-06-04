@@ -241,26 +241,18 @@ xml_print_result([H | T]) :-
 	xml_print_predicate(H), 
 	xml_print_result(T).
 
-xml_print_predicate(pred(P/A, Partitions)) :-
-	print('    <predicate name="'),
-	print(P/A),
-	print('">'),
-	nl,
+xml_print_predicate(pred(P, Partitions)) :-
+	format('    <predicate name="~w">~n', [P]),
 	xml_print_partitions(Partitions, 0),
-	print('    </predicate>'),
-	nl.
+	format('    </predicate>~n').
 
 xml_print_partitions([], _).
 xml_print_partitions([P1+P2+P3+P4 | T], Id) :-
-	print('       <partition id="'),
-	print(Id),
-	print('">'),
-	nl,
-	print('          <new_entities>'),   print(P1), print('</new_entities>'),   nl,
-	print('          <subproblems>'),    print(P2), print('</subproblems>'),    nl, 
-	print('          <relation_compl>'), print(P3), print('</relation_compl>'), nl,
-	print('          <new_variables>'),  print(P4), print('</new_variables>'),  nl,
-	print('       </partition>'),
-	nl, 
+	format('       <partition id="~w">~n', [Id]),
+	format('          <new_entities>~w</new_entities>~n', [P1]),
+	format('          <subproblems>~w</subproblems>~n', [P2]),
+	format('          <relations_complexity>~w</relations_complexity>~n', [P3]),
+	format('          <new_variables>~w</new_variables>~n', [P4]),
+	format('       </partition>~n'),
 	NewId is Id + 1, 
 	xml_print_partitions(T, NewId).

@@ -1,17 +1,24 @@
 #!/usr/bin/perl
 
-package xml_parse;
+package pl_package;
 
 use strict;
 use XML::Simple;
 
-sub xml_parse($) {
-    my ($string) = @_;
-    my $xs = XML::Simple->new(ForceArray => ['partition']);
-    my $result = $xs->XMLin($string); 
-    use Data::Dumper;
-    warn Dumper($result);
+sub get_data($) {
+    my ($filename) = @_;
+    my $command = fetch_xml_command($filename);
+    warn $command;
+    my $xml = `$command`;
+    my $xs = XML::Simple->new(ForceArray => ['partition'], GroupTags => { links => 'consult' });
+    my $result = $xs->XMLin($xml); 
     return $result;    
+}
+
+sub fetch_xml_command($) {
+    my ($file) = @_;
+    # TODO
+    return "swipl -t halt -f none -g \"[parse], read_file('$file').\"";
 }
 
 sub get_predicates($) {
@@ -31,8 +38,6 @@ sub get_predicates($) {
 	    local => local_total($partitions),
 	};
     }
-    use Data::Dumper;
-    warn Dumper($result);
     return $result;
 }
 
@@ -54,5 +59,18 @@ sub local_total($) {
     };
 }
 
+sub get_links($) {
+    my ($data) = @_;
+    my $links = [];
+    use Data::Dumper;
+    my $lnk = $data->{links};
+    if ($lnk =~ /^ARRAY/) {
+	for (@$lnk) {
+	    push @$links, $_->{ref};
+	};
+    };
+    warn Dumper($links);
+    return $links;
+}
 
 return 1;

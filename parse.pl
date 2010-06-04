@@ -10,10 +10,10 @@
 % read_file(+InputStream)
 %   Reads all terms from InputStream and analyse each of them.
 read_file(Filename) :-
-	consult(Filename),
+	consult(Filename), % TODO Replace this with calling op/3 as in the file.
 	see(Filename),
 	read_terms(Terms),
-	analyse(Terms).
+	analyse(Terms, Filename).
 
 % read_terms(-Terms)
 %   Unify Terms with the list of terms (in order of appearance)
@@ -28,14 +28,13 @@ read_terms(T) :-
 	 read_terms(L)
 	).
 
-% analyse(+Terms)
+% analyse(+Terms, +PackageName)
 %   Analyse all Terms using various metrics.
-analyse(T) :-
-	print_xml_header,
+analyse(T, Pack) :-
+	print_xml_header(Pack), 
 	links_analyse(T), 
 	halstead_analyse(T), 
 	local_analyse(T),
 	print_xml_footer.
-
 
 

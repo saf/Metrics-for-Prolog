@@ -26,7 +26,7 @@ terms_vocabs([H | T], Vocabs, NewVocabs) :-
 	terms_vocabs(T, Merged, NewVocabs).
 
 % term_vocab(+Term, -PredName, -Vocab)
-term_vocab(T, "<commands>", V) :-
+term_vocab(T, '[commands]', V) :-
 	functor(T, :-, 1), 
 	!, 
 	empty_vocab(E), 
@@ -196,21 +196,14 @@ xml_print_footer :-
 xml_print_predicate_metrics([]).
 xml_print_predicate_metrics([voc(Pred, V) | T]) :-
 	vocab_metrics(V, M), 
-	print('    <predicate name="'),
-	print(Pred),
-	print('">'),
-	nl, 
+	format('    <predicate name="~w">~n', [Pred]),
 	xml_print_metrics(M),
-	print('    </predicate>'),
-	nl, 
+	format('    </predicate>~n'),
 	xml_print_predicate_metrics(T).
 
 xml_print_metrics([]).
 xml_print_metrics([H | T]) :-
 	H =.. [Name, Value],
-	print('      <'), print(Name), print('>'),
-	print(Value),
-	print('</'), print(Name), print('>'),
-	nl,
+	format('      <~w>~w</~w>~n', [Name, Value, Name]),
 	xml_print_metrics(T).
 	
