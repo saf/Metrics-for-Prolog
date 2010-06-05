@@ -8,7 +8,6 @@ use XML::Simple;
 sub get_data($) {
     my ($filename) = @_;
     my $command = fetch_xml_command($filename);
-    warn $command;
     my $xml = `$command`;
     my $xs = XML::Simple->new(ForceArray => ['partition'], GroupTags => { links => 'consult' });
     my $result = $xs->XMLin($xml); 
@@ -62,14 +61,12 @@ sub local_total($) {
 sub get_links($) {
     my ($data) = @_;
     my $links = [];
-    use Data::Dumper;
     my $lnk = $data->{links};
     if ($lnk =~ /^ARRAY/) {
 	for (@$lnk) {
 	    push @$links, $_->{ref};
 	};
     };
-    warn Dumper($links);
     return $links;
 }
 
