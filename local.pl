@@ -142,6 +142,7 @@ relations_complexity(:-(L, R), C) :-
 	relations_complexity([R], P/A, 0, C).
 relations_complexity(_, 0).         % Red cut for simplicity.
 
+% relations_complexity(+Terms, +Predicate, +Accumulator, -Complexity)
 relations_complexity([], _, C, C).
 relations_complexity([H | T], P/A, Acc, C) :-
 	var(H),
@@ -164,9 +165,9 @@ relations_complexity([H | T], P/A, Acc, C) :-
 	nonvar(H),
 	functor(H, S, Ar),
 	(P, A) \= (S, Ar),
-	S \= '->',
-	S \= ';',
-	S \= '*->', 
+	S/Ar \= '->'/2,
+	S/Ar \= ';'/2,
+	S/Ar \= '*->'/2, 
 	H =.. [S | Args], 
 	relations_complexity(Args, P/A, Acc, NAcc),
 	relations_complexity(T, P/A, NAcc, C).
