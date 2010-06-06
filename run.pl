@@ -23,15 +23,23 @@ sub add_analysis($) {
 
     unless (defined $data->{$file}) {  # Cycle-safe
 	my $pkg = $file;
+
 	my $dir = `dirname $file`;
 	chomp $dir;
+	if ($dir eq '.') {
+	    $dir = '' ;
+	} else {
+	    $dir .= '/';
+	};
+
 	$pkg =~ s/\.pl$//;
 	my $pkg_data = pl_package::get_data($file);
 	$data->{$pkg} = $pkg_data;
 	my $links = pl_package::get_links($pkg_data);
+
 	for (@$links) {
 	    s/$/.pl/ unless m/\.pl$/;
-	    add_analysis($dir . '/' . $_);
+	    add_analysis($dir . $_);
 	};
     }
 }

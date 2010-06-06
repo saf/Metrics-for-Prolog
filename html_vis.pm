@@ -3,21 +3,23 @@
 package html_vis;
 
 use html;
+use GraphViz;
 
 return 1;
 
 sub visualise($) {
     my ($data) = @_;
     
-    package_summary($data);
     my $deps = get_dependencies($data);
+    create_dep_graph($deps);
+    project_summary($data);    
 
     for my $pkg (sort get_packages($data)) {
 	package_details($pkg, $data->{$pkg}, $deps);
     }
 }
 
-sub package_summary($) {
+sub project_summary($) {
     my ($data) = @_;
 
     open OVERALL, ">output/index.html";
@@ -25,8 +27,18 @@ sub package_summary($) {
 
     my $pkgs = get_packages($data);
     my $deps = get_dependencies($data);
+    my $number_packages = @$pkgs;
 
     print OVERALL <<_END;
+        <h2>Project summary</h2>
+	<h2>Package dependency graph</h2>
+	  <p class="explanation">The following graph shows relationships between the project modules. 
+	    An arrow from package X to package Y means that package X consults Y. </p>
+	    <img src="packages.png" />
+	<h2>List of packages</h2>
+	  <p class="explanation">The list contains all Prolog files included within the project, along
+	    with some top-level statistics of the files. Click on the file name to view details on
+	    the package.</p>
 	<table>
 	  <tr>
 	    <th>File name</th>
@@ -50,14 +62,17 @@ _END
     print OVERALL <<_END;
         </table>
 _END
+
+
+
     html::footer(\*OVERALL);
 }
 
 sub package_overall_info($$$) {
     my ($pkg, $data, $deps) = @_;
 
-    my $fanin  = defined $deps->{incoming}->{$pkg} ? @{$deps->{incoming}->{$pkg}} : 0;
-    my $fanout = defined $deps->{outgoing}->{$pkg} ? @{$deps->{outgoing}->{$pkg}} : 0;
+    my $fanin  = @{$deps->{incoming}->{$pkg}};
+    my $fanout = @{$deps->{outgoing}->{$pkg}};
 
     my $predicates = pl_package::get_predicates($data);
     my $npred      = @$predicates;
@@ -92,21 +107,22 @@ sub get_dependencies($) {
     my $incoming = {};
     my $pkgs = get_packages($data);
 
+    for my $pkg (@$pkgs) {
+	$incoming->{$pkg} = [];
+	$outgoing->{$pkg} = [];
+    };
+
+    use Data::Dumper;
+    warn Dumper($pkgs);
+
     for my $pkg (sort @$pkgs) {
 	my $links = $data->{$pkg}->{links};
+
 	if ($links =~ /^ARRAY/) {
 	    for (@$links) {
 		my $dep = $_->{ref};
-		if (defined $outgoing->{$pkg}) {
-		    push @{$outgoing->{$pkg}}, $dep;
-		} else {
-		    $outgoing->{$pkg} = [$dep];
-		};
-		if (defined $incoming->{$dep}) {
-		    push @{$incoming->{$dep}}, $pkg;
-		} else {
-		    $incoming->{$dep} = [$pkg];
-		};
+		push @{$outgoing->{$pkg}}, $dep;
+		push @{$incoming->{$dep}}, $pkg;
 	    }
 	}
     }
@@ -120,7 +136,19 @@ sub get_dependencies($) {
 sub create_dep_graph($) {
     my ($deps) = @_;
     
-    
+    my $gv = GraphViz->new();
+    for (keys %{$deps->{outgoing}}) {
+	$gv->add_node($_);
+    };
+    for my $pkg (keys %{$deps->{outgoing}}) {
+	for (@{$deps->{outgoing}->{$pkg}}) {
+	    $gv->add_edge($pkg => $_);
+	}
+    };
+
+    open GRAPH, ">output/packages.png";
+    print GRAPH $gv->as_png;
+    close GRAPH;
 }
 
 sub package_page_name($) {
