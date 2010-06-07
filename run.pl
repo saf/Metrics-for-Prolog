@@ -2,46 +2,26 @@
 
 use strict;
 
-use pl_package;
+use util;
 use html_vis;
+
+unless (-d "output") {
+    mkdir "output", 0777 or die "Failed to create output directory: $!";
+}
 
 my @files = @ARGV;
 
 my $data = {};
 
+util::init_files(\@files);
+
 for my $file (@files) {
-    add_analysis($file, $data); 
+    util::add_analysis($file, $data); 
 }
 
-use Data::Dumper;
-#warn Dumper($data);
-
+util::postprocess_data($data);
 html_vis::visualise($data);
 
-sub add_analysis($) {
-    my ($file) = @_;
-
-    unless (defined $data->{$file}) {  # Cycle-safe
-	my $pkg = $file;
-
-	my $dir = `dirname $file`;
-	chomp $dir;
-	if ($dir eq '.') {
-	    $dir = '' ;
-	} else {
-	    $dir .= '/';
-	};
-
-	$pkg =~ s/\.pl$//;
-	my $pkg_data = pl_package::get_data($file);
-	$data->{$pkg} = $pkg_data;
-	my $links = pl_package::get_links($pkg_data);
-
-	for (@$links) {
-	    s/$/.pl/ unless m/\.pl$/;
-	    add_analysis($dir . $_);
-	};
-    }
-}
+exit 0;
 
 

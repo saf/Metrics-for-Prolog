@@ -11,6 +11,7 @@ sub get_data($) {
     my $xml = `$command`;
     my $xs = XML::Simple->new(ForceArray => ['partition'], GroupTags => { links => 'consult' });
     my $result = $xs->XMLin($xml); 
+    add_code_metrics($filename, $result);
     return $result;    
 }
 
@@ -68,6 +69,26 @@ sub get_links($) {
 	};
     };
     return $links;
+}
+
+sub add_code_metrics($$) {
+    my ($file, $data) = @_;
+
+    my $loc = 0;
+    my $comments = 0;
+    my $effective_loc = 0;
+
+    open FILE, "<$file";
+    while(<FILE>) {
+	$loc++;
+	$effective_loc++ if m/[^%]*\w/;
+	$comments++ if m/%/;
+    };
+    close FILE;
+
+    $data->{loc} = $loc;
+    $data->{effective_loc} = $effective_loc;
+    $data->{comments} = $comments;
 }
 
 return 1;
