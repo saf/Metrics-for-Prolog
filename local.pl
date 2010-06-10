@@ -52,9 +52,8 @@ merge_predicates(Partitions, Predicates) :-
 
 merge_predicates([], Ps, Ps).
 merge_predicates([H | T], Ps, NPs) :-
-	merge_predicate(Ps, H, N), 
-	%print((Ps, H, N)), nl, nl, 
-	merge_predicates(T, N, NPs).
+	merge_predicates(T, Ps, N),
+	merge_predicate(N, H, NPs).
 
 % merge_predicate(+Predicates, +Partition, -NewPredicates)
 %   Merge a single partition information into Predicates
