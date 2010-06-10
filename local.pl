@@ -21,19 +21,26 @@ predicate_complexity(Terms, AnnotatedPredicates) :-
 %   complexity.
 partitions_complexity([], []).
 partitions_complexity([H | T], AT) :-
-	\+ predicate_name(H, _), 
+	\+ predicate_name(H, _, _), 
 	!, 
 	partitions_complexity(T, AT).
-partitions_complexity([H | T], [part(Pred, C) | AT]) :-
-	predicate_name(H, Pred),
+partitions_complexity([H | T], [part(Pred, Type, C) | AT]) :-
+	predicate_name(H, Type, Pred),
 	partition_complexity(H, C), 
 	partitions_complexity(T, AT).
 
-% predicate_name(+Term, -Name)
-%   Succeeds whenever Term is a partition. Name is the
-%   name and arity of the defined relation.
-predicate_name(:-(C, _), N/A) :-
+% predicate_name(+Term, -Type -Name)
+%   Succeeds whenever Term is a partition. Name is the name and arity
+%   of the defined relation. Type is one of 'clause', 'command' or
+%   'fact'.
+predicate_name(:-(C, _), clause, N/A) :-
+        !,
 	functor(C, N, A).
+predicate_name(:-(_), command, '[commands]') :-
+        !.
+predicate_name(T, fact, N/A) :- % Fact.
+	functor(T, N, A),
+	atom(N).
 
 % merge_predicates(+Partitions, -Predicates)
 %   Complexity values of Partitions are merged for 
@@ -49,12 +56,12 @@ merge_predicates([H | T], Ps, NPs) :-
 
 % merge_predicate(+Predicates, +Partition, -NewPredicates)
 %   Merge a single partition information into Predicates
-merge_predicate([], part(P, C), [pred(P, [C])]).
-merge_predicate([pred(P, L) | T], part(P, C), [pred(P, [C | L]) | T]) :- 
+merge_predicate([], part(P, Type, C), [pred(P, [predpart(Type, C)])]).
+merge_predicate([pred(P, L) | T], part(P, Type, C), [pred(P, [predpart(Type, C) | L]) | T]) :- 
 	!.
-merge_predicate([pred(R, CR) | T], part(P, C), [pred(R, CR) | NT]) :-
+merge_predicate([pred(R, CR) | T], part(P, Type, C), [pred(R, CR) | NT]) :-
 	R \= P, 
-	merge_predicate(T, part(P, C), NT).
+	merge_predicate(T, part(P, Type, C), NT).
 
 %
 % PARTITION COMPLEXITY
@@ -75,7 +82,15 @@ partition_complexity(T, C) :-
 %    In other words, C is the number of non-trivial variables in
 %    the left side of the partition.
 new_entities(:-(L, _), C) :-
+        !,
         L =.. [_ | Args],
+	count_nontrivial_variables(Args, 0, C).
+new_entities(:-(_), 0) :-                    % Command.
+        !.
+new_entities(T, C) :-                        % Fact.
+	functor(T, S, _),
+	atom(S),
+	T =.. [S | Args],
 	count_nontrivial_variables(Args, 0, C).
 
 % count_nontrivial_variables(+Terms, +Accumulator, -Variables)
@@ -117,7 +132,12 @@ count_variables([H | T], A, V) :-
 % subproblems(+Term, -C)
 %    Unify C with the number of negative atoms in the partition.
 subproblems(:-(_, R), C) :-
+        !,
         count_subproblems(R, 0, C).
+subproblems(:-(R), C) :-                 % Command
+        !,
+	count_subproblems(R, 0, C).      
+subproblems(_, 0).                       % Fact
 
 % count_subproblems(+Term, +Accumulator, -Subproblems)
 count_subproblems(T, A, S) :-
@@ -138,9 +158,9 @@ count_subproblems(_, A, C) :-
 %    or implication operator (->, *->) adds 1.
 relations_complexity(:-(L, R), C) :-
 	functor(L, P, A),
-	!, 
+	!,                          % Red cut for simplicity
 	relations_complexity([R], P/A, 0, C).
-relations_complexity(_, 0).         % Red cut for simplicity.
+relations_complexity(_, 0).         % Command or fact.
 
 % relations_complexity(+Terms, +Predicate, +Accumulator, -Complexity)
 relations_complexity([], _, C, C).
@@ -176,10 +196,16 @@ relations_complexity([H | T], P/A, Acc, C) :-
 %   Unify C with the number of all new variables in the negative 
 %   side of the partition.
 new_variables(:-(L, R), C) :-
+        !,
 	all_variables(L, [], LV), 
 	all_variables(R, [], RV), 
 	list_diff(RV, LV, D), 
 	length(D, C).
+new_variables(:-(R), C) :-          % Command.
+        !,
+        all_variables(R, [], RV),
+	length(RV, C).
+new_variables(_, 0).                % Fact.
 
 % all_variables(+T, +Acc, -L) 
 %   L contains the union of Acc and the set of variables in T.
@@ -248,8 +274,8 @@ xml_print_predicate(pred(P, Partitions)) :-
 	format('    </predicate>~n').
 
 xml_print_partitions([], _).
-xml_print_partitions([P1+P2+P3+P4 | T], Id) :-
-	format('       <partition id="~w">~n', [Id]),
+xml_print_partitions([predpart(Type, P1+P2+P3+P4) | T], Id) :-
+	format('       <partition id="~w" type="~w">~n', [Id, Type]),
 	format('          <new_entities>~w</new_entities>~n', [P1]),
 	format('          <subproblems>~w</subproblems>~n', [P2]),
 	format('          <relations_complexity>~w</relations_complexity>~n', [P3]),

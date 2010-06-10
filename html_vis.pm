@@ -361,7 +361,7 @@ _END
 	    print OUTPUT <<_END;
 	    <tr class="$inTrClass">
 		<td class="lastInGroup">${\($c->{id}+1)}</td>
-		<td class="lastInGroup">&nbsp;</td>
+		<td class="lastInGroup">$c->{type}</td>
 		<td>$c->{subproblems}</td>
 		<td>$c->{new_entities}</td>
 		<td>$c->{new_variables}</td>

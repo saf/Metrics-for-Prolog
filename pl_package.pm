@@ -9,6 +9,7 @@ sub get_data($) {
     my ($filename) = @_;
     my $command = fetch_xml_command($filename);
     my $xml = `$command`;
+    warn $xml;
     my $xs = XML::Simple->new(ForceArray => ['partition'], GroupTags => { links => 'consult' });
     my $result = $xs->XMLin($xml); 
     add_code_metrics($filename, $result);
