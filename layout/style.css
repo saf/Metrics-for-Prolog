@@ -135,3 +135,7 @@ div.clausesDetails {
     display: none;
     padding: 20px;
 }
+
+a.cdShowHide, a.detailsShowHideLink {
+    cursor: pointer;
+}
