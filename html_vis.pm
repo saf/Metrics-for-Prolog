@@ -31,10 +31,40 @@ sub project_summary($) {
 
     my $pkgs = util::get_packages($data);
     my $number_packages = @$pkgs;
+    my $summary = project_overall_info($data, $deps);
+    my $compl_rating = rate::local_complexity($summary->{predicates}->{ave_loc});
 
     print OVERALL <<_END;
         <h2>Project metrics summary</h2>
 	<div class="separator"></div>
+	<h3>Project summary</h3>
+	  <table class="summaryTable">
+	    <tr><td colspan="2" class="hdr">Code metrics</th></tr>
+	    <tr><th>Lines of code</th><td>$summary->{code}->{loc}</td></tr>
+            <tr><th>Lines of effective code</th><td>$summary->{code}->{eloc}</td></tr>
+            <tr><th>Comments per line</th><td>${format_float($summary->{code}->{comments_per_line})}</td></tr>
+	  </table>
+	  <table class="summaryTable">
+	    <tr><td colspan="2" class="hdr">Halstead metrics</th></tr>
+	    <tr><th>Total volume</th><td>${format_float($summary->{halstead}->{volume})}</td></tr>
+	    <tr><th>Total effort</th><td>${format_float($summary->{halstead}->{effort})}</td></tr>
+	    <tr><th>Total time</th><td>${format_time($summary->{halstead}->{time})}</td></tr>
+	  </table>
+	  <table class="summaryTable">
+	    <tr><td colspan="2" class="hdr">Packages</th></tr>
+	    <tr><th>Number of packages</th><td>$summary->{packages}->{number}</td></tr>
+	    <tr><th>Average LOC per package</th><td>$summary->{packages}->{loc_per_package}</td></tr>
+	  </table>
+	  <table class="summaryTable">
+	    <tr><td colspan="2" class="hdr">Predicates</th></tr>
+	    <tr><th>Number of predicates</th><td>$summary->{predicates}->{number}</td>
+	    <tr><th>Average LOC per predicate</th><td>${format_float($summary->{predicates}->{ave_loc})}</td>
+	    <tr><th>Average complexity</th>
+	      <td>${format_float($summary->{predicates}->{ave_complexity})}
+                  <span style="color: $compl_rating->{color}">($compl_rating->{long})</span>
+              </td></tr>
+	  </table>
+	  
 	<h3>Package dependency graph</h3>
 	  <p class="explanation">The following graph shows relationships between the project modules. 
 	    An arrow from package X to package Y means that package X consults Y. </p>
@@ -211,7 +241,7 @@ sub package_details($$$) {
 	 <tr><td colspan="2" class="hdr">Package metrics</th></tr>
 	 <tr><th>Total volume</th><td style="color: $volume_rating->{color}">${format_float($details->{halstead}->{volume})}</td></tr>
 	 <tr><th>Total effort</th><td style="color: $effort_rating->{color}">${format_float($details->{halstead}->{effort})}</td></tr>
-	 <tr><th>Estimated time to implement</th><td>$details->{halstead}->{time}</td></tr>
+	 <tr><th>Estimated time to implement</th><td>${format_time($details->{halstead}->{time})}</td></tr>
 	 <tr><th>Average clause complexity</th>
 	     <td>${format_float($details->{complexity}->{average_complexity})}
                  <span style="color: $complexity_rating->{color}">($complexity_rating->{long})</span>
@@ -282,7 +312,7 @@ _END
     for my $p (@predicates) {
 	my $clauses = $p->{local}->{partitions};
 	my $n_clauses = @$clauses;
-	my $est_time = time_from_seconds($p->{halstead}->{time});
+	my $est_time = ${format_time($p->{halstead}->{time})};
 	my $av_compl_rating = rate::local_complexity($p->{local}->{average});
 	my $mx_compl_rating = rate::local_complexity($p->{local}->{max});
 	my $t_compl_rating  = rate::total_complexity($p->{local}->{sum});
@@ -355,6 +385,57 @@ _END
     html::footer(\*OUTPUT);
 }
 
+sub project_overall_info($) {
+    my ($data, $deps) = @_;
+
+    my $loc = 0;
+    my $eloc = 0;
+    my $cloc = 0;
+    my $total_effort = 0;
+    my $total_volume = 0;
+    my $total_time = 0;
+    my $total_complexity = 0;
+    my $total_predicates = 0;
+
+    my $pkgs = util::get_packages($data);
+    my $n_packages = @$pkgs;
+    for my $pkg (@$pkgs) {
+	my $info = package_info($pkg, $data->{$pkg}, $deps);
+	
+	$loc += $info->{code}->{loc}, 
+	$eloc += $info->{code}->{effective_loc},
+	$cloc += $info->{code}->{loc_comments}, 
+
+	$total_effort += $info->{halstead}->{effort};
+	$total_volume += $info->{halstead}->{volume};
+	$total_predicates += $info->{predicates}->{number};
+	$total_complexity += $info->{complexity}->{average_complexity} * $info->{predicates}->{number};
+	$total_time += $info->{halstead}->{time};
+    }
+
+    return { 
+	code => {
+	    loc => $loc, 
+	    eloc => $eloc,
+	    comments_per_line => $eloc == 0 ? 0 : $cloc / $eloc,
+	}, 
+	packages => {
+	    number => $n_packages, 
+	    loc_per_package => $n_packages == 0 ? 0 : $loc / $n_packages,
+	}, 
+	halstead => {
+	    volume => $total_volume, 
+	    effort => $total_effort, 
+	    time => $total_time * (log($n_packages+1) / log(2)),
+	}, 
+	predicates => {
+	    number => $total_predicates, 
+	    ave_loc => $total_predicates == 0 ? 0 : $loc / $total_predicates, 
+	    ave_complexity => $total_predicates == 0 ? 0 : $total_complexity / $total_predicates,
+	},
+    };
+}
+
 sub package_info($$$) {
     my ($pkg, $data, $deps) = @_;
 
@@ -383,7 +464,7 @@ sub package_info($$$) {
 	halstead => {
 	    volume => $overall->{total_volume}, 
 	    effort => $overall->{total_effort}, 
-	    time   => time_from_seconds($overall->{total_effort} / 5 * log($n_predicates)),
+	    time   => $overall->{total_effort} / 10 * (log($n_predicates + 1) / log(2)),
         },
 	complexity => {
 	    average_complexity => $overall->{average_complexity}, 
@@ -403,7 +484,7 @@ sub package_page_name($) {
 }
 
 
-sub time_from_seconds($) {
+sub format_time($) {
     my ($seconds) = @_;
 
     my $spm = 60;
@@ -421,7 +502,7 @@ sub time_from_seconds($) {
     push @result, "$mins minutes" if $mins > 0;
     push @result, "$secs seconds" if $mins + $days + $hours == 0;
 
-    return join ', ', @result;
+    return \(join ', ', @result);
 }
 
 sub format_float($) {

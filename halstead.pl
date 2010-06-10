@@ -153,7 +153,7 @@ vocab_metrics(V, [length(Length), vocabulary(Vocabulary),
 	Volume is Length * log(Vocabulary) / log(2),
 	Difficulty is (UniqueOperators * AllOperands) / (UniqueOperands * 2),
 	Effort is Volume * Difficulty,
-	Time is Effort / 5.
+	Time is Effort / 10.
 
 % all_operands(+V, -AO)
 %   Unify AO with the number of all operands in the vocabulary V
