@@ -38,6 +38,8 @@ predicate_name(:-(C, _), clause, N/A) :-
 	functor(C, N, A).
 predicate_name(:-(_), command, '[commands]') :-
         !.
+predicate_name(?-(_), command, '[commands]') :-
+	!.
 predicate_name(T, fact, N/A) :- % Fact.
 	functor(T, N, A),
 	atom(N).
@@ -87,6 +89,8 @@ new_entities(:-(L, _), C) :-
 	count_nontrivial_variables(Args, 0, C).
 new_entities(:-(_), 0) :-                    % Command.
         !.
+new_entities(?-(_), 0) :-
+	!.
 new_entities(T, C) :-                        % Fact.
 	functor(T, S, _),
 	atom(S),
@@ -136,7 +140,10 @@ subproblems(:-(_, R), C) :-
         count_subproblems(R, 0, C).
 subproblems(:-(R), C) :-                 % Command
         !,
-	count_subproblems(R, 0, C).      
+	count_subproblems(R, 0, C).
+subproblems(?-(R), C) :-
+	!,
+	count_subproblems(R, 0, C).
 subproblems(_, 0).                       % Fact
 
 % count_subproblems(+Term, +Accumulator, -Subproblems)
@@ -204,6 +211,10 @@ new_variables(:-(L, R), C) :-
 new_variables(:-(R), C) :-          % Command.
         !,
         all_variables(R, [], RV),
+	length(RV, C).
+new_variables(?-(R), C) :-
+	!,
+	all_variables(R, [], RV),
 	length(RV, C).
 new_variables(_, 0).                % Fact.
 

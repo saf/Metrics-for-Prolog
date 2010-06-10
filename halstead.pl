@@ -27,7 +27,7 @@ terms_vocabs([H | T], Vocabs, NewVocabs) :-
 
 % term_vocab(+Term, -PredName, -Vocab)
 term_vocab(T, '[commands]', V) :-
-	functor(T, :-, 1), 
+	(functor(T, :-, 1); functor(T, ?-, 1)), 
 	!, 
 	empty_vocab(E), 
 	subterm_vocab(T, E, W),

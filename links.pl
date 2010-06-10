@@ -20,9 +20,16 @@ consults([:-([CH | CT]) | T], Consults) :-
         !,                            % Red cut for simplicity
 	append([CH | CT], TC, Consults),
 	consults(T, TC).
+consults([?-([CH | CT]) | T], Consults) :-
+	!,
+	append([CH | CT], TC, Consults),
+	consults(T, TC).
 consults([:-(consult(F)) | T], [F | TC]) :-
         !,
         consults(T, TC).
+consults([?-(consult(F)) | T], [F | TC]) :-
+	!,
+	consults(T, TC).
 consults([_ | T], TC) :-
 	consults(T, TC).
 

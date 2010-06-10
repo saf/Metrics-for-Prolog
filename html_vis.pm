@@ -32,7 +32,7 @@ sub project_summary($) {
     my $pkgs = util::get_packages($data);
     my $number_packages = @$pkgs;
     my $summary = project_overall_info($data, $deps);
-    my $compl_rating = rate::local_complexity($summary->{predicates}->{ave_loc});
+    my $compl_rating = rate::local_complexity($summary->{predicates}->{ave_complexity});
 
     print OVERALL <<_END;
         <h2>Project metrics summary</h2>
@@ -53,7 +53,7 @@ sub project_summary($) {
 	  <table class="summaryTable">
 	    <tr><td colspan="2" class="hdr">Packages</th></tr>
 	    <tr><th>Number of packages</th><td>$summary->{packages}->{number}</td></tr>
-	    <tr><th>Average LOC per package</th><td>$summary->{packages}->{loc_per_package}</td></tr>
+	    <tr><th>Average LOC per package</th><td>${format_float($summary->{packages}->{loc_per_package})}</td></tr>
 	  </table>
 	  <table class="summaryTable">
 	    <tr><td colspan="2" class="hdr">Predicates</th></tr>
@@ -396,6 +396,7 @@ sub project_overall_info($) {
     my $total_time = 0;
     my $total_complexity = 0;
     my $total_predicates = 0;
+    my $links = 0;
 
     my $pkgs = util::get_packages($data);
     my $n_packages = @$pkgs;
@@ -411,6 +412,8 @@ sub project_overall_info($) {
 	$total_predicates += $info->{predicates}->{number};
 	$total_complexity += $info->{complexity}->{average_complexity} * $info->{predicates}->{number};
 	$total_time += $info->{halstead}->{time};
+
+	$links += $info->{relationships}->{fan_in};
     }
 
     return { 
@@ -426,7 +429,7 @@ sub project_overall_info($) {
 	halstead => {
 	    volume => $total_volume, 
 	    effort => $total_effort, 
-	    time => $total_time * (log($n_packages+1) / log(2)),
+	    time => $total_time * (log($links+1) / log(2)),
 	}, 
 	predicates => {
 	    number => $total_predicates, 
@@ -502,7 +505,7 @@ sub format_time($) {
     push @result, "$mins minutes" if $mins > 0;
     push @result, "$secs seconds" if $mins + $days + $hours == 0;
 
-    return \(join ', ', @result);
+    return \("<nobr>" . (join ', ', @result) . "</nobr>");
 }
 
 sub format_float($) {

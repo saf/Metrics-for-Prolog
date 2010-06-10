@@ -31,7 +31,7 @@ read_terms(T) :-
 % analyse(+Terms, +PackageName)
 %   Analyse all Terms using various metrics.
 analyse(T, Pack) :-
-	print_xml_header(Pack), 
+	print_xml_header(Pack),
 	links_analyse(T), 
 	halstead_analyse(T), 
 	local_analyse(T),
