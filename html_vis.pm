@@ -59,6 +59,8 @@ _END
 	my $pkgpage = package_page_name($pkg);
 	my $info = package_overall_info($pkg, $data->{$pkg}, $deps);
 	my $complexity_rating = rate::local_complexity($info->{average_complexity});
+	my $volume_rating = rate::package_volume($info->{total_volume});
+	my $effort_rating = rate::package_effort($info->{total_effort});
 
 	print OVERALL <<_END;
 	  <tr class="$trClass">
@@ -66,8 +68,12 @@ _END
 	      <td>$info->{fan_in}</td>
 	      <td class="lastInGroup">$info->{fan_out}</td>
 	      <td class="lastInGroup">$info->{n_predicates}</td>
-	      <td class="numeric">${format_float($info->{total_volume})}</td>
-	      <td class="lastInGroup numeric">${format_float($info->{total_effort})}</td>
+	      <td class="numeric" style="color: $volume_rating->{color}">
+	         ${format_float($info->{total_volume})}
+	      </td>
+	      <td class="lastInGroup numeric" style="color: $effort_rating->{color}">
+	         ${format_float($info->{total_effort})}
+	      </td>
 	      <td class="right numeric">${format_float($info->{average_complexity})}</td>
               <td class="left" style="color: $complexity_rating->{color}">($complexity_rating->{long})</td>
 	  </tr>
@@ -171,6 +177,9 @@ sub package_details($$$) {
 
     my $details = package_info($pkg, $data, $deps);
     my $complexity_rating = rate::local_complexity($details->{complexity}->{average_complexity});
+    my $volume_rating = rate::package_volume($details->{halstead}->{volume});
+    my $effort_rating = rate::package_effort($details->{halstead}->{effort});
+				     
     my $preds = pl_package::get_predicates($data);
     my @predicates = sort { $a->{name} cmp $b->{name} } @$preds;
     my @incoming = @{$deps->{incoming}->{$pkg}};
@@ -200,10 +209,10 @@ sub package_details($$$) {
 
        <table class="summaryTable">
 	 <tr><td colspan="2" class="hdr">Package metrics</th></tr>
-	 <tr><th>Total volume</th><td>${format_float($details->{halstead}->{volume})}</td></tr>
-	 <tr><th>Total effort</th><td>${format_float($details->{halstead}->{effort})}</td></tr>
+	 <tr><th>Total volume</th><td style="color: $volume_rating->{color}">${format_float($details->{halstead}->{volume})}</td></tr>
+	 <tr><th>Total effort</th><td style="color: $effort_rating->{color}">${format_float($details->{halstead}->{effort})}</td></tr>
 	 <tr><th>Estimated time to implement</th><td>$details->{halstead}->{time}</td></tr>
-	 <tr><th>Average partition complexity</th>
+	 <tr><th>Average clause complexity</th>
 	     <td>${format_float($details->{complexity}->{average_complexity})}
                  <span style="color: $complexity_rating->{color}">($complexity_rating->{long})</span>
 	     </td></tr>
@@ -251,16 +260,19 @@ _END
 
     <h3>Predicates</h3>
 
+    Click on a predicate name to view details on its clauses.
+
     <table class="detailsTable">
     <tr class="mainHdr">
       <th rowspan="2" class="lastInGroup">Predicate</th>
       <th rowspan="2" class="lastInGroup">Clauses</th>
       <th colspan="6" class="lastInGroup">Halstead metrics</th>
-      <th colspan="3" >Complexity</th>
+      <th colspan="5" >Complexity</th>
     </tr>
     <tr class="subHdr">
       <th>Length</th><th>Vocabulary</th><th>Difficulty</th><th>Volume</th><th>Effort</th><th class="lastInGroup">Time</th>
       <th colspan="2">Average</th>
+      <th colspan="2">Maximum</th>
       <th>Sum</th>
     </tr>    
 _END
@@ -271,7 +283,12 @@ _END
 	my $clauses = $p->{local}->{partitions};
 	my $n_clauses = @$clauses;
 	my $est_time = time_from_seconds($p->{halstead}->{time});
-	my $compl_rating = rate::local_complexity($p->{local}->{average});
+	my $av_compl_rating = rate::local_complexity($p->{local}->{average});
+	my $mx_compl_rating = rate::local_complexity($p->{local}->{max});
+	my $t_compl_rating  = rate::total_complexity($p->{local}->{sum});
+	my $diff_rating = rate::difficulty($p->{halstead}->{difficulty});
+	my $effort_rating = rate::predicate_effort($p->{halstead}->{effort});
+	my $volume_rating = rate::predicate_volume($p->{halstead}->{volume});
 
         print OUTPUT <<_END;
     <tr class="$trClass">
@@ -279,14 +296,19 @@ _END
 	<td class="lastInGroup">$n_clauses</td>
 	<td>$p->{halstead}->{length}</td>
 	<td>$p->{halstead}->{vocabulary}</td>
-	<td class="numeric">${format_float($p->{halstead}->{difficulty})}</td>
-	<td class="numeric">${format_float($p->{halstead}->{volume})}</td>
-	<td class="numeric">${format_float($p->{halstead}->{effort})}</td>
+	<td class="numeric" style="color: $diff_rating->{color}">${format_float($p->{halstead}->{difficulty})}</td>
+	<td class="numeric" style="color: $volume_rating->{color}">${format_float($p->{halstead}->{volume})}</td>
+	<td class="numeric" style="color: $effort_rating->{color}">${format_float($p->{halstead}->{effort})}</td>
 	<td class="lastInGroup">$est_time</td>
-	<td class="right numeric">${format_float($p->{local}->{average})}</td><td class="left" style="color: $compl_rating->{color}">($compl_rating->{long})</td>
-	<td>$p->{local}->{sum}</td>
+	<td class="right numeric">${format_float($p->{local}->{average})}</td>
+	<td class="left" style="color: $av_compl_rating->{color}" 
+	    title="$av_compl_rating->{long}">($av_compl_rating->{short})</td>
+	<td class="right numeric">${format_float($p->{local}->{max})}</td>
+	<td class="left" style="color: $mx_compl_rating->{color}"
+	    title="$mx_compl_rating->{long}">($mx_compl_rating->{short})</td>
+	<td style="color: $t_compl_rating->{color}">$p->{local}->{sum}</td>
     </tr>
-    <tr><td colspan="11" class="detailsHolder">
+    <tr><td colspan="13" class="detailsHolder">
       <div class="clausesDetails" id="cd_$pn">
         <table class="detailsTable">
 	   <tr class="mainHdr">

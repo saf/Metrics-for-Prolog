@@ -45,16 +45,19 @@ sub local_total($) {
     my ($partitions) = @_;
     my $sum = 0;
     my $n = @$partitions;
+    my $max = 0;
 
     for (@$partitions) {
-	my $compl = $_->{new_entities} + $_->{subproblems} + $_->{relation_compl} + $_->{new_variables};
+	my $compl = $_->{new_entities} + $_->{subproblems} + $_->{relations_complexity} + $_->{new_variables};
 	$sum += $compl;
+	$max = $compl if $compl > $max;
     };
 
     return {
 	partitions => $partitions, 
 	sum => $sum, 
 	average => $n == 0 ? undef : $sum / $n,
+	max => $max,
 	n_partitions => $n,
     };
 }
