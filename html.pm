@@ -9,6 +9,9 @@ sub header($$) {
 <html>
   <head>
     <title>$title</title>
+    <link rel="stylesheet" href="style.css" />
+    <script language="JavaScript" src="js/jquery-1.4.2.js"></script>
+    <script language="JavaScript" src="js/mfpl.js"></script>
   </head>
   <body>
 _END

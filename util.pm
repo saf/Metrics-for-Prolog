@@ -94,6 +94,7 @@ sub canon_name_and_dir($$) {
     my $relative = File::Spec->abs2rel($filename, $base);
     my ($vol, $reldir, $fname) = File::Spec->splitpath($relative);
 
+    $relative =~ s|\.pl||;
     return ($relative, $reldir);
 }
 

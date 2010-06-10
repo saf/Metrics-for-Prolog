@@ -33,41 +33,46 @@ sub project_summary($) {
     my $number_packages = @$pkgs;
 
     print OVERALL <<_END;
-        <h2>Project summary</h2>
-	<h2>Package dependency graph</h2>
+        <h2>Project metrics summary</h2>
+	<div class="separator"></div>
+	<h3>Package dependency graph</h3>
 	  <p class="explanation">The following graph shows relationships between the project modules. 
 	    An arrow from package X to package Y means that package X consults Y. </p>
 	    <img src="packages.png" />
-	<h2>List of packages</h2>
+	<h3>List of packages</h3>
 	  <p class="explanation">The list contains all Prolog files included within the project, along
 	    with some top-level statistics of the files. Click on the file name to view details on
 	    the package.</p>
-	<table>
-	  <tr>
-	    <th>File name</th>
+	<table class="detailsTable">
+	  <tr class="mainHdr">
+	    <th class="lastInGroup">Package</th>
 	    <th>Fan-in</th>
-	    <th>Fan-out</th>
-	    <th>Predicates</th>
+	    <th class="lastInGroup">Fan-out</th>
+	    <th class="lastInGroup">Predicates</th>
 	    <th>Volume</th>
-	    <th>Effort</th>
-	    <th>Average LC</th>
+	    <th class="lastInGroup">Effort</th>
+	    <th colspan="2">Average LC</th>
 	  </tr>
 _END
+    my $trClass = "odd";
     for my $pkg (sort @$pkgs) {
 	my $pkgpage = package_page_name($pkg);
 	my $info = package_overall_info($pkg, $data->{$pkg}, $deps);
+	my $complexity_rating = rate::local_complexity($info->{average_complexity});
 
-	print OVERALL 
-	    "\t  <tr>\n"
-	    . "\t    <td><a href=\"$pkgpage\">$pkg</a></td>\n"
-	    . (join '', (map { "\t    <td>$_</td>\n" } (
-			     $info->{fan_in}, 
-			     $info->{fan_out}, 
-			     $info->{n_predicates}, 
-			     $info->{total_volume}, 
-			     $info->{total_effort}, 
-			     $info->{average_complexity})))
-	    . "\t  </tr>\n";
+	print OVERALL <<_END;
+	  <tr class="$trClass">
+	      <td class="mainCell lastInGroup"><a href="$pkgpage">$pkg</a></td>
+	      <td>$info->{fan_in}</td>
+	      <td class="lastInGroup">$info->{fan_out}</td>
+	      <td class="lastInGroup">$info->{n_predicates}</td>
+	      <td class="numeric">${format_float($info->{total_volume})}</td>
+	      <td class="lastInGroup numeric">${format_float($info->{total_effort})}</td>
+	      <td class="right numeric">${format_float($info->{average_complexity})}</td>
+              <td class="left" style="color: $complexity_rating->{color}">($complexity_rating->{long})</td>
+	  </tr>
+_END
+        $trClass = ($trClass eq 'odd') ? 'even' : 'odd';
     };
     
     print OVERALL <<_END;
@@ -166,41 +171,166 @@ sub package_details($$$) {
 
     my $details = package_info($pkg, $data, $deps);
     my $complexity_rating = rate::local_complexity($details->{complexity}->{average_complexity});
+    my $preds = pl_package::get_predicates($data);
+    my @predicates = sort { $a->{name} cmp $b->{name} } @$preds;
+    my @incoming = @{$deps->{incoming}->{$pkg}};
+    my @outgoing = @{$deps->{outgoing}->{$pkg}};
 
     print OUTPUT <<_END;
+    <a class="backLink" href="index.html">Back to package list</a>
     <h2>Package <span class="packageName">$pkg</span></h2>
+    <div class="separator"></div>	
+	
     <h3>Package summary</h3>
 
-       <table class="noborder">
-         <tr><th colspan="2" class="hdr">Code metrics</th></tr>
+       <table class="summaryTable">
+         <tr><td colspan="2" class="hdr">Code metrics</th></tr>
 	 <tr><th>Total lines of code</th><td>$details->{code}->{loc}</td></tr>
 	 <tr><th>Lines with effective code</th><td>$details->{code}->{effective_loc}</td></tr>
 	 <tr><th>Lines with comments</th><td>$details->{code}->{loc_comments}</td></tr>
-	 <tr><th>Comments per effective line</th><td>$details->{code}->{comments_per_line}</td></tr>
+	 <tr><th>Comments per effective line</th><td>${format_float($details->{code}->{comments_per_line})}</td></tr>
+       </table>
 	 
-	 <tr><th colspan="2" class="hdr">Predicate statistics</th></tr>
+       <table class="summaryTable">
+	 <tr><td colspan="2" class="hdr">Predicate statistics</th></tr>
 	 <tr><th>Number of predicates</th><td>$details->{predicates}->{number}</td></tr>
-	 <tr><th>LOC per predicate</th><td>$details->{predicates}->{loc_per_predicate}</td></tr>
-	 <tr><th>Comment lines per predicate</th><td>$details->{predicates}->{comments_per_predicate}</td></tr>
+	 <tr><th>LOC per predicate</th><td>${format_float($details->{predicates}->{loc_per_predicate})}</td></tr>
+	 <tr><th>Comment lines per predicate</th><td>${format_float($details->{predicates}->{comments_per_predicate})}</td></tr>
+       </table>
 
-	 <tr><th colspan="2" class="hdr">Package metrics</th></tr>
-	 <tr><th>Total volume</th><td>$details->{halstead}->{volume}</td></tr>
-	 <tr><th>Total effort</th><td>$details->{halstead}->{effort}</td></tr>
+       <table class="summaryTable">
+	 <tr><td colspan="2" class="hdr">Package metrics</th></tr>
+	 <tr><th>Total volume</th><td>${format_float($details->{halstead}->{volume})}</td></tr>
+	 <tr><th>Total effort</th><td>${format_float($details->{halstead}->{effort})}</td></tr>
 	 <tr><th>Estimated time to implement</th><td>$details->{halstead}->{time}</td></tr>
 	 <tr><th>Average partition complexity</th>
-	     <td>$details->{complexity}->{average_complexity} 
+	     <td>${format_float($details->{complexity}->{average_complexity})}
                  <span style="color: $complexity_rating->{color}">($complexity_rating->{long})</span>
 	     </td></tr>
+       </table>
 
-	 <tr><th colspan="2" class="hdr">Package relationship metrics</th></tr>
+       <table class="summaryTable">
+	 <tr><td colspan="2" class="hdr">
+	    <a class="detailsShowHideLink" href="#">Show details &gt;&gt;</a>
+	    Package coupling metrics</th></tr>
 	 <tr><th>Fan-in</th><td>$details->{relationships}->{fan_in}</td></tr>
 	 <tr><th>Fan-out</th><td>$details->{relationships}->{fan_out}</td></tr>
-
+	 <tr id="couplingDetails"><td colspan="2" class="detailsHolder">
+ 	    <table class="hiddenDetails">
+	    <tr>
+	       <th class="inSummaryDetailsHdr">Consulted by:</th>
+	       <th class="inSummaryDetailsHdr">Consults:</th>
+	    </tr>
+_END
+    my $i = 0;
+    while (defined $incoming[$i] || defined $outgoing[$i] || $i <= 0) {
+	my ($incLink, $outLink);
+	if (@incoming == 0 && $i == 0) {
+	    $incLink = "(none)";
+	} elsif (defined $incoming[$i]) {
+	    my $page = package_page_name($incoming[$i]);
+	    $incLink = "<a href=\"$page\">$incoming[$i]</a>";
+	};
+	if (@outgoing == 0 && $i == 0) {
+	    $outLink = "(none)";
+	} elsif (defined $outgoing[$i]) {
+	    my $page = package_page_name($outgoing[$i]);
+	    $outLink = "<a href=\"$page\">$outgoing[$i]</a>";
+	};
+	$i++;
+	print OUTPUT <<_END;
+	    <tr>
+		<td>$incLink</td>
+		<td>$outLink</td>
+	    </tr>		
+_END
+    }
+    print OUTPUT <<_END;
+	    </table></tr></td>
        </table>
 
     <h3>Predicates</h3>
-    
+
+    <table class="detailsTable">
+    <tr class="mainHdr">
+      <th rowspan="2" class="lastInGroup">Predicate</th>
+      <th rowspan="2" class="lastInGroup">Clauses</th>
+      <th colspan="6" class="lastInGroup">Halstead metrics</th>
+      <th colspan="3" >Complexity</th>
+    </tr>
+    <tr class="subHdr">
+      <th>Length</th><th>Vocabulary</th><th>Difficulty</th><th>Volume</th><th>Effort</th><th class="lastInGroup">Time</th>
+      <th colspan="2">Average</th>
+      <th>Sum</th>
+    </tr>    
 _END
+
+    my $trClass = "odd";
+    my $pn = 0;
+    for my $p (@predicates) {
+	my $clauses = $p->{local}->{partitions};
+	my $n_clauses = @$clauses;
+	my $est_time = time_from_seconds($p->{halstead}->{time});
+	my $compl_rating = rate::local_complexity($p->{local}->{average});
+
+        print OUTPUT <<_END;
+    <tr class="$trClass">
+	<td class="mainCell lastInGroup"><a class="cdShowHide" cdid="$pn">$p->{name}</a></td>
+	<td class="lastInGroup">$n_clauses</td>
+	<td>$p->{halstead}->{length}</td>
+	<td>$p->{halstead}->{vocabulary}</td>
+	<td class="numeric">${format_float($p->{halstead}->{difficulty})}</td>
+	<td class="numeric">${format_float($p->{halstead}->{volume})}</td>
+	<td class="numeric">${format_float($p->{halstead}->{effort})}</td>
+	<td class="lastInGroup">$est_time</td>
+	<td class="right numeric">${format_float($p->{local}->{average})}</td><td class="left" style="color: $compl_rating->{color}">($compl_rating->{long})</td>
+	<td>$p->{local}->{sum}</td>
+    </tr>
+    <tr><td colspan="11" class="detailsHolder">
+      <div class="clausesDetails" id="cd_$pn">
+        <table class="detailsTable">
+	   <tr class="mainHdr">
+	     <th rowspan="2" class="lastInGroup">#</td>
+	     <th rowspan="2" class="lastInGroup">Type</td>
+	     <th colspan="4" class="lastInGroup">Local complexity details</th>
+	     <th rowspan="2" colspan="2">Complexity</th>
+	   </tr>
+	   <tr class="subHdr">
+	     <th>Sub</th>
+	     <th>Dat</th>
+	     <th>Var</th>
+	     <th class="lastInGroup">Rel</th>
+	   </tr>
+_END
+        my $inTrClass = 'odd';
+        for my $c (@$clauses) {
+	    my $compl = $c->{subproblems} + $c->{new_entities} + $c->{new_variables} + $c->{relations_complexity};
+	    my $compl_rating = rate::local_complexity($compl);
+	    print OUTPUT <<_END;
+	    <tr class="$inTrClass">
+		<td class="lastInGroup">${\($c->{id}+1)}</td>
+		<td class="lastInGroup">&nbsp;</td>
+		<td>$c->{subproblems}</td>
+		<td>$c->{new_entities}</td>
+		<td>$c->{new_variables}</td>
+		<td class="lastInGroup">$c->{relations_complexity}</td>
+		<td class="right">$compl</td><td class="left" style="color: $compl_rating->{color}">($compl_rating->{long})</td>
+	    </tr>
+_END
+            $inTrClass = ($inTrClass eq 'odd') ? 'even' : 'odd';
+        }
+	print OUTPUT <<_END;
+	</table>
+    </td></tr>
+_END
+        $trClass = ($trClass eq 'even') ? 'odd' : 'even';
+	$pn++;
+    }
+
+    print OUTPUT <<_END;
+    </table>
+_END
+    html::footer(\*OUTPUT);
 }
 
 sub package_info($$$) {
@@ -231,7 +361,7 @@ sub package_info($$$) {
 	halstead => {
 	    volume => $overall->{total_volume}, 
 	    effort => $overall->{total_effort}, 
-	    time   => time_from_seconds($overall->{total_effort} / 5),
+	    time   => time_from_seconds($overall->{total_effort} / 5 * log($n_predicates)),
         },
 	complexity => {
 	    average_complexity => $overall->{average_complexity}, 
@@ -260,13 +390,19 @@ sub time_from_seconds($) {
 
     my $days = int($seconds / $spd);
     my $hours = int(($seconds - $spd * $days) / $sph);
-    my $minutes = int(($seconds - $spd * $days - $sph * $hours) / $spm);
+    my $mins = int(($seconds - $spd * $days - $sph * $hours) / $spm);
+    my $secs = int($seconds - $spd * $days - $sph * $hours - $spm * $mins);
 
-    my $result = '';
-    $result .= "$days days, " if $days > 0;
-    $result .= "$hours hours, " if $hours > 0; 
-    $result .= "$minutes minutes" if $minutes > 0;
+    my @result = ();
+    push @result, "$days days" if $days > 0;
+    push @result, "$hours hours" if $hours > 0; 
+    push @result, "$mins minutes" if $mins > 0;
+    push @result, "$secs seconds" if $mins + $days + $hours == 0;
 
-    return $result;
+    return join ', ', @result;
 }
 
+sub format_float($) {
+    my ($f) = @_;
+    return \(sprintf "%.2f", $f);
+}

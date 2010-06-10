@@ -9,6 +9,8 @@ unless (-d "output") {
     mkdir "output", 0777 or die "Failed to create output directory: $!";
 }
 
+`cp -rt output layout/*`;
+
 my @files = @ARGV;
 
 my $data = {};
