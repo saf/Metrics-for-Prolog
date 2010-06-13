@@ -25,6 +25,8 @@ for my $file (@files) {
 util::postprocess_data($data);
 html_vis::visualise($data);
 
+print "\nAnalysis complete. HTML output created in ./output/\n";
+
 exit 0;
 
 
