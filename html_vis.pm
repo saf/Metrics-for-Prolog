@@ -93,13 +93,13 @@ sub print_project_summary($$) {
 	    <tr><td colspan="2" class="hdr">Code metrics</th></tr>
 	    <tr><th>Lines of code</th><td>$summary->{code}->{loc}</td></tr>
             <tr><th>Lines of effective code</th><td>$summary->{code}->{eloc}</td></tr>
-            <tr><th>Comments per line</th><td>${format_float($summary->{code}->{comments_per_line})}</td></tr>
+            <tr><th title="Number of comments per effective line of code">Comments per line</th><td>${format_float($summary->{code}->{comments_per_line})}</td></tr>
 	  </table>
 	  <table class="summaryTable">
 	    <tr><td colspan="2" class="hdr">Halstead metrics</th></tr>
-	    <tr><th>Total volume</th><td>${format_float($summary->{halstead}->{volume})}</td></tr>
-	    <tr><th>Total effort</th><td>${format_float($summary->{halstead}->{effort})}</td></tr>
-	    <tr><th>Total time</th><td>${format_time($summary->{halstead}->{time})}</td></tr>
+	    <tr><th title="Sum of all package volumes">Total volume</th><td>${format_float($summary->{halstead}->{volume})}</td></tr>
+	    <tr><th title="Sum of all package efforts">Total effort</th><td>${format_float($summary->{halstead}->{effort})}</td></tr>
+	    <tr><th title="Sum of all package efforts multiplied by a logarithm of the number of packages">Total time</th><td>${format_time($summary->{halstead}->{time})}</td></tr>
 	  </table>
 	  <table class="summaryTable">
 	    <tr><td colspan="2" class="hdr">Packages</th></tr>
@@ -110,7 +110,7 @@ sub print_project_summary($$) {
 	    <tr><td colspan="2" class="hdr">Predicates</th></tr>
 	    <tr><th>Number of predicates</th><td>$summary->{predicates}->{number}</td>
 	    <tr><th>Average LOC per predicate</th><td>${format_float($summary->{predicates}->{ave_loc})}</td>
-	    <tr><th>Average complexity</th>
+	    <tr><th title="Average local complexity measure for the project's clause">Average complexity</th>
 	      <td>${format_float($summary->{predicates}->{ave_complexity})}
                   <span style="color: $compl_rating->{color}">($compl_rating->{long})</span>
               </td></tr>
@@ -141,12 +141,12 @@ sub print_package_list($$$) {
 	<table class="detailsTable">
 	  <tr class="mainHdr">
 	    <th class="lastInGroup">Package</th>
-	    <th>Fan-in</th>
-	    <th class="lastInGroup">Fan-out</th>
+	    <th title="Number of packages consulted by this package">Fan-in</th>
+	    <th class="lastInGroup" title="Number of packages the package consults">Fan-out</th>
 	    <th class="lastInGroup">Predicates</th>
-	    <th>Volume</th>
-	    <th class="lastInGroup">Effort</th>
-	    <th colspan="2">Average LC</th>
+	    <th title="Measure of how big the package is; total of predicate volumes">Volume</th>
+	    <th class="lastInGroup" title="Measure of how hard the package is to create or understand; total of all predicate effort measures">Effort</th>
+	    <th colspan="2" title="Average local complexity measure of the package's clauses">Average LC</th>
 	  </tr>
 _END
 
@@ -218,9 +218,9 @@ sub print_package_summary($$$$) {
 
        <table class="summaryTable">
 	 <tr><td colspan="2" class="hdr">Package metrics</th></tr>
-	 <tr><th>Total volume</th><td style="color: $volume_rating->{color}">${format_float($details->{halstead}->{volume})}</td></tr>
-	 <tr><th>Total effort</th><td style="color: $effort_rating->{color}">${format_float($details->{halstead}->{effort})}</td></tr>
-	 <tr><th>Estimated time to implement</th><td>${format_time($details->{halstead}->{time})}</td></tr>
+	 <tr><th title="Sum of volume measures for predicates">Total volume</th><td style="color: $volume_rating->{color}">${format_float($details->{halstead}->{volume})}</td></tr>
+	 <tr><th title="Sum of effort measures for predicates">Total effort</th><td style="color: $effort_rating->{color}">${format_float($details->{halstead}->{effort})}</td></tr>
+	 <tr><th title="Sum of time estimates for predicates multiplied by a logarithm of the number of predicates">Estimated time to implement</th><td>${format_time($details->{halstead}->{time})}</td></tr>
 	 <tr><th>Average clause complexity</th>
 	     <td>${format_float($details->{complexity}->{average_complexity})}
                  <span style="color: $complexity_rating->{color}">($complexity_rating->{long})</span>
@@ -231,8 +231,8 @@ sub print_package_summary($$$$) {
 	 <tr><td colspan="2" class="hdr">
 	    <a class="detailsShowHideLink">Show details &gt;&gt;</a>
 	    Package coupling metrics</th></tr>
-	 <tr><th>Fan-in</th><td>$details->{relationships}->{fan_in}</td></tr>
-	 <tr><th>Fan-out</th><td>$details->{relationships}->{fan_out}</td></tr>
+	 <tr><th title="Number of packages that consult this one">Fan-in</th><td>$details->{relationships}->{fan_in}</td></tr>
+	 <tr><th title="Number of packages this package consults">Fan-out</th><td>$details->{relationships}->{fan_out}</td></tr>
 	 <tr id="couplingDetails"><td colspan="2" class="detailsHolder">
 _END
 
@@ -295,16 +295,21 @@ sub print_predicate_list($$) {
 
     <table class="detailsTable">
     <tr class="mainHdr">
-      <th rowspan="2" class="lastInGroup">Predicate</th>
-      <th rowspan="2" class="lastInGroup">Clauses</th>
+      <th rowspan="2" class="lastInGroup" title="Standard Prolog predicate name">Predicate</th>
+      <th rowspan="2" class="lastInGroup" title="Number of clauses in the predicate">Clauses</th>
       <th colspan="6" class="lastInGroup">Halstead metrics</th>
       <th colspan="5" >Complexity</th>
     </tr>
     <tr class="subHdr">
-      <th>Length</th><th>Vocabulary</th><th>Difficulty</th><th>Volume</th><th>Effort</th><th class="lastInGroup">Time</th>
-      <th colspan="2">Average</th>
-      <th colspan="2">Maximum</th>
-      <th>Sum</th>
+      <th title="Number of Prolog tokens">Length</th>
+      <th title="Number of unique operators and operands">Vocabulary</th>
+      <th title="Error proneness measure; proportional to the number of distinct operators and the average number of occurrences of operands">Difficulty</th>
+      <th title="Predicate size measure">Volume</th>
+      <th title="Measures how hard it is to write or understand the predicate. Proportional to Volume and Difficulty">Effort</th>
+      <th class="lastInGroup" title="Rough estimate of time needed to write the predicate. Proportional to Effort.">Time</th>
+      <th colspan="2" title="Average clause complexity">Average</th>
+      <th colspan="2" title="Maximum clause complexity">Maximum</th>
+      <th title="Sum of the complexities of all clauses">Sum</th>
     </tr>    
 _END
 
@@ -370,21 +375,21 @@ sub print_clauses_list($$$) {
 	<div class="clausesDetails" id="cd_$pn">
           <table class="detailsTable">
 	    <tr class="mainHdr">
-	      <th rowspan="2" class="lastInGroup">#</td>
-	      <th rowspan="2" class="lastInGroup">Type</td>
+	      <th rowspan="2" class="lastInGroup" title="Clause number">#</td>
+	      <th rowspan="2" class="lastInGroup" title="Fact/Command/Clause">Type</td>
 	      <th colspan="4" class="lastInGroup">Local complexity details</th>
-	      <th rowspan="2" colspan="2">Complexity</th>
+	      <th rowspan="2" colspan="2" title="Total complexity of the clause, equal to Sub+Dat+Var+Rel">Complexity</th>
 	    </tr>
 	    <tr class="subHdr">
-	      <th>Sub</th>
-	      <th>Dat</th>
-	      <th>Var</th>
-	      <th class="lastInGroup">Rel</th>
+	      <th title="Number of subproblems into which the problem is divided">Sub</th>
+	      <th title="Number of new data entities introduced in the left hand side of the clause">Dat</th>
+	      <th title="Number of new variables introduced in the right hand side of the clause">Var</th>
+	      <th class="lastInGroup" title="Measure of the complexity of relations between the subproblems. We add 1 for every disjunction and implication and 2 for every recursive call">Rel</th>
 	    </tr>
 _END
 
     my $even = 0;
-    for my $c (@$clauses) {
+    for my $c (sort {$a->{id} <=> $b->{id}} @$clauses) {
 	print_clause_row($out, $c, $even);
 	$even = $even ? 0 : 1;
     };

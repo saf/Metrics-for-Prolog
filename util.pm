@@ -214,8 +214,6 @@ sub package_info($$$) {
     };
 }
 
-
-
 sub package_overall_info($$$) {
     my ($pkg, $data, $deps) = @_;
 

@@ -9,7 +9,7 @@ sub get_data($) {
     my ($filename) = @_;
     my $command = fetch_xml_command($filename);
     my $xml = `$command`;
-    my $xs = XML::Simple->new(ForceArray => ['partition'], GroupTags => { links => 'consult' });
+    my $xs = XML::Simple->new(ForceArray => ['partition', 'predicate'], GroupTags => { links => 'consult' });
     my $result = $xs->XMLin($xml); 
     add_code_metrics($filename, $result);
     return $result;    
@@ -17,7 +17,7 @@ sub get_data($) {
 
 sub fetch_xml_command($) {
     my ($file) = @_;
-    # TODO
+    # TODO allow SICStus to be run if found.
     return "swipl -t halt -f none -g \"[parse], read_file('$file').\"";
 }
 
