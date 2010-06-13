@@ -164,7 +164,7 @@ sub project_overall_info($$) {
 	halstead => {
 	    volume => $total_volume, 
 	    effort => $total_effort, 
-	    time => $total_time * (log($links+1) / log(2)),
+	    time => $total_time * (log(($links == 0 ? 1 : $links) + 3) / log(4)),
 	}, 
 	predicates => {
 	    number => $total_predicates, 
@@ -202,7 +202,7 @@ sub package_info($$$) {
 	halstead => {
 	    volume => $overall->{total_volume}, 
 	    effort => $overall->{total_effort}, 
-	    time   => $overall->{total_effort} / 10 * (log($n_predicates + 1) / log(2)),
+	    time   => $overall->{total_time} * (log($n_predicates + 1) / log(2)),
         },
 	complexity => {
 	    average_complexity => $overall->{average_complexity}, 
@@ -224,12 +224,14 @@ sub package_overall_info($$$) {
     my $npred      = @$predicates;
     my $total_volume = 0;
     my $total_effort = 0;
+    my $total_time = 0;
     my $total_complexity = 0;
     my $total_partitions = 0;
     
     for (@$predicates) {
 	$total_volume += $_->{halstead}->{volume}; 
 	$total_effort += $_->{halstead}->{effort};
+	$total_time   += $_->{halstead}->{time};
 	$total_complexity += $_->{local}->{sum};
 	$total_partitions += $_->{local}->{n_partitions};
     };
@@ -242,6 +244,7 @@ sub package_overall_info($$$) {
 	n_predicates => $npred,
 	total_volume => $total_volume,
 	total_effort => $total_effort, 
+	total_time   => $total_time,
 	average_complexity => $average_complexity,
     };
 }

@@ -73,16 +73,29 @@ subterm_vocab(T, V, W) :-
 	nonvar(T),
 	!, 
 	T =.. [S | Args],
-	\+ (atom(S), current_op(_, _, S)), 
+	\+ (atom(S), current_op(_, _, S)),
+	length(Args, L),
+	Commas is L - 1,
 	add_operand(V, S, V1),
-	add_operator(V1, '()', V2), 
-	subterms_vocab(Args, V2, W).
+	add_operator(V1, '()', V2),
+	add_operators(V2, ',', Commas, V3), 
+	subterms_vocab(Args, V3, W).
 subterm_vocab(T, V, W) :-
 	var(T),
 	!,
 	add_operand(V, T, W).
 
 % Vocabulary management
+
+% add_operators(+OldVocab, +Operator, +Repetitions, -NewVocab)
+add_operators(In, _, N, In) :-
+	N =< 0,
+	!.
+add_operators(In, Op, N, Out) :-
+	N > 0,
+	NN is N - 1,
+	add_operator(In, Op, Mid),
+	add_operators(Mid, Op, NN, Out).
 
 % add_operator(+OldVocab, +Operator, -NewVocab)
 add_operator((Operators, Operands), Op, (NewOperators, Operands)) :-
@@ -153,7 +166,7 @@ vocab_metrics(V, [length(Length), vocabulary(Vocabulary),
 	Volume is Length * log(Vocabulary) / log(2),
 	Difficulty is (UniqueOperators * AllOperands) / (UniqueOperands * 2),
 	Effort is Volume * Difficulty,
-	Time is Effort / 10.
+	Time is Effort / 12.
 
 % all_operands(+V, -AO)
 %   Unify AO with the number of all operands in the vocabulary V
