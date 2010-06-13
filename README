@@ -1,0 +1,45 @@
+Metrics for Prolog
+
+Author: Sławomir Rudnicki
+	student of the Faculty of Mathematics, Informatics and
+	Mechanics of the Warsaw University.
+
+Metrics for Prolog (MFPL) is a simple tool for measuring some
+complexity metrics for Prolog programs.
+
+
+== Dependencies ==
+
+To be run, MFPL requires the following programs and packages:
+
+* perl
+* graphviz
+* SWI-Prolog
+* Perl packages (available from CPAN):
+   -- XML::Simple, 
+   -- GraphViz
+
+== Running ==
+
+To run the program, cd into its main directory and run:
+
+   $ ./run.pl <pl-files>
+
+where <pl-files> is a space-separated list of .pl Prolog files 
+to be analysed.
+
+== Documentation ==
+
+In the main directory there is also a file metrics.tex, which 
+contains an article on some assumptions I made while implementing
+MFPL. The file may be compiled with the following command:
+
+   $ pdflatex metrics.tex
+
+after which the file metrics.pdf will be created, ready to be viewed.
+
+== Contact ==
+
+If you want to share some feedback with me, e-mail me at:
+
+   sr248277@students.mimuw.edu.pl
