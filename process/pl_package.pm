@@ -18,7 +18,7 @@ sub get_data($) {
 sub fetch_xml_command($) {
     my ($file) = @_;
     # TODO allow SICStus to be run if found.
-    return "swipl -t halt -f none -g \"[parse], read_file('$file').\"";
+    return "swipl -t halt -f none -g \"['metrics/parse.pl'], read_file('$file').\"";
 }
 
 sub get_predicates($) {

@@ -2,6 +2,7 @@
 
 use strict;
 
+use lib './process';
 use util;
 use html_vis;
 
