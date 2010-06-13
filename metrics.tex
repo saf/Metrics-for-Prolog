@@ -24,12 +24,33 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Blah blah blah
+  Little effort has been put into developing methods for measuring
+  quantitative values of complexity and maintainability of logic-based
+  programs. This work presents the approach towards adapting known
+  software metrics to Prolog code, as well as \emph{Metrics for
+    Prolog}, a simple Prolog metrics tool.
 \end{abstract}
 \begin{multicols}{2}
 
-
 \section{Introduction}
+
+In the software industry, there is a need to control the complexity
+and maintainability of the produced code. The most well-known
+approaches to measuring this maintainability, which provide
+quantitative results, were introduced in the late 1970s by Thomas
+McCabe Sr. \cite{mccabe}, who based his metric on computational
+features of programs, and Maurice Halstead, who in turn proposed
+metrics that relied on psychological aspects of understanding software
+code.
+
+There has not been much effort put into measuring the complexity of
+code when it comes to declarative and logic-based programming. I have
+developed a simple tool, called \emph{Metrics for Prolog} or
+\emph{MFPL}, that provides some simple metrics for code written in
+Prolog, a logic-based programming language. 
+
+This document presents a discussion of whether and how some software
+metrics may be adapted to modern Prolog code.
 
 \section{The Prolog language}
 
@@ -48,10 +69,41 @@ thorough introduction to the core syntax and semantics of Prolog
 itself can be found in the classic book by Clocksin and Mellish
 \cite{clocksin}.
 
-
-
 \section{Local complexity measure}
 
+An early approach towards measuring code metrics of Prolog has been
+presented in a 1985 work by Markusz and Kaposi\cite{markusz}. They
+proposed a metric designed specifically for Prolog, which is simple to
+compute and gives a view on the complexity of given clauses (or
+\emph{partitions}). The metric, which will here be called the
+\emph{local complexity measure}, or LC, allows for measuring both the
+complexity level and the size of the whole file or program.
+
+In MFPL, I have implemented a modified version of what Markusz and
+Kaposi describe as their first attempt to their complexity measure. 
+It is defined as:
+$$ C = P_1 + P_2 + P_3 + P_4, $$
+where:
+\begin{itemize}
+\item $P_1$ is the number of new data entities in the left hand side
+  of the partition. I have interpreted this as the number of new
+  non-trivial variables introduced in the positive atom.
+\item $P_2$ is the number of subproblems the clause divides the
+  problem into. This is interpreted as the number of atoms in the
+  right hand side of the clause.
+\item $P_3$ measures the complexity of relations between the
+  subproblems. Markusz and Kaposi suggested that $2$ should be added
+  here for every recursive call of the defined predicate. Since the
+  set of Prolog operators that change the relationships between the
+  subproblems, I have decided to modify this approach by also adding
+  $1$ for each disjunction (introduced by the operator \texttt{;}) and
+  implication (introduced by operators \texttt{->} and
+  \texttt{*->}).
+\item $P_4$ is the number of variables introduced in the right hand
+  side of the clause.
+\end{itemize}
+However in the original work the measure was only applied to clauses, 
+in MFPL it is also used to measure facts and commands. 
 
 \section{Halstead's metrics}
 
@@ -128,7 +180,7 @@ $$A\,\, is\,\, B + 1,$$
 Prolog understands it as nothing but:
 $$is(A, +(B, 1)).$$ When one takes into account the fact that function
 names in Java function calls are commonly considered to be operands,
-it is therefore tempting to view all terms as operands.
+it is therefore tempting to view all subterms of a term as operands.
 
 To add to this, Prolog is often used to write meta-programs --
 programs that operate on Prolog source code. Some programs may even
@@ -191,7 +243,54 @@ treated as operators:
 
 \subsection{Variable distinctiveness}
 
+Halstead's metrics heavily rely on which operands and operators we
+consider to be \emph{the same}. Whereas this is no problem with
+operators, atoms and integers, it becomes problematic when it comes to
+variables. In MFPL, I decided to make the following assumptions:
+\begin{itemize}
+\item Variables occurring in different clauses of the same predicate
+  are considered distinct, even if they have the same name. This is
+  because the variables do not share a common scope (as we would call
+  it if Prolog were a procedural language). 
+\item Singleton variables (i.e. variables that occur only once in a
+  clause) are all considered distinct, even though they are often
+  denoted by the same name ``\_''. This assumption is again derived
+  from the psychological basis of Halstead's metrics: even though the
+  programmer does not have to ``mentally compare'' the singleton
+  variable to other variables, he has to take note of its position as
+  an argument of a term and only then can they consider it irrelevant.
+\end{itemize}
 
+\subsection{Other metrics}
+
+Logic-based programming strongly differs from imperative programming
+in that the programmer states a problem and lets the built-in
+inference mechanism find the solution instead of providing means to
+solve the problem. Thus, not every software metric can be sensibly
+adapted to Prolog. For example, the cyclomatic complexity (CC) metric
+introduced by Thomas J. McCabe\cite{mccabe}, however general, can only
+apply to procedural languages. Without going into the details, CC is
+equal to the minimum number of execution paths that span the whole
+execution tree, in which branching is introduced by checking a logical
+condition. 
+
+Due to the declarative nature of Prolog, not every language construct
+can be interpretted as a part of the execution tree in a
+straightforward way. As a simple example, let's take the following
+one-clause predicate:
+\begin{center}
+\texttt{succ(A, B) :- B is A+1.}
+\end{center}
+When we start to think in procedural terms, as suggested by McCabe's
+metric, calling this predicate may have two different outcomes. On one
+hand, it may act as a simple assignment statement, equivalent to
+\texttt{B~:=~A+1}. On the other hand, it may be a logical check,
+equivalent to \texttt{B~==~A+1} and would as such introduce a branch
+in the execution tree. 
+
+Such problems multiply when more complex language constructs are
+considered. Therefore, I did not attempt to include McCabe's metric,
+or other ``procedural'' metrics, in MFPL.
 
 \end{multicols}
 
@@ -202,6 +301,10 @@ treated as operators:
   W.F. Clocksin, C.S. Mellish, 
   \emph{Programming in Prolog}, 
   Springer-Verlag Telos, 1994.
+\bibitem{markusz}
+  Z. Markusz and A.A. Kaposi 
+  \emph{Complexity Control in Logic-based Programming},
+  The Computer Journal, 28: pp. 487-495, 1985.
 \bibitem{halstead}
   M.H. Halstead, 
   \emph{Elements of Software Science}, 
@@ -210,5 +313,9 @@ treated as operators:
   I. Nandy, 
   \emph{Halstead's Operators and Operands}
   Scribd.com, 2007.
+\bibitem{mccabe}
+  T.J. McCabe, 
+  \emph{A Complexity Measure}, 
+  IEEE Transactions on Software Engineering: pp. 308–320, 1976.
 \end{thebibliography}
 \end{document}
