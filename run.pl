@@ -8,6 +8,8 @@ use html_vis;
 
 unless (-d "output") {
     mkdir "output", 0777 or die "Failed to create output directory: $!";
+} else {
+    `rm -r output/*`;
 }
 
 `cp -rt output layout/*`;
