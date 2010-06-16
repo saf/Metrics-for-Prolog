@@ -38,10 +38,10 @@ In the software industry, there is a need to control the complexity
 and maintainability of the produced code. The most well-known
 approaches to measuring this maintainability, which provide
 quantitative results, were introduced in the late 1970s by Thomas
-McCabe Sr. \cite{mccabe}, who based his metric on computational
-features of programs, and Maurice Halstead, who in turn proposed
-metrics that relied on psychological aspects of understanding software
-code.
+McCabe Sr.\cite{mccabe}, who based his metric on computational
+features of programs, and Maurice Halstead\cite{halstead}, who in
+turn proposed metrics that relied on psychological aspects of
+understanding software code.
 
 There has not been much effort put into measuring the complexity of
 code when it comes to declarative and logic-based programming. I have
@@ -66,8 +66,8 @@ arguments such that a given relation holds. In this document, I will
 briefly describe the basics of logic programming to the extent that is
 needed to understand the problems of adapting code metrics to it. A
 thorough introduction to the core syntax and semantics of Prolog
-itself can be found in the classic book by Clocksin and Mellish
-\cite{clocksin}.
+itself can be found in the classic book by Clocksin and
+Mellish\cite{clocksin}.
 
 \section{Local complexity measure}
 
@@ -79,9 +79,9 @@ compute and gives a view on the complexity of given clauses (or
 \emph{local complexity measure}, or LC, allows for measuring both the
 complexity level and the size of the whole file or program.
 
-In MFPL, I have implemented a modified version of what Markusz and
-Kaposi describe as their first attempt to their complexity measure. 
-It is defined as:
+In \emph{MFPL}, I have implemented a modified version of what Markusz
+and Kaposi describe as their first attempt to developing their
+complexity measure.  It is defined as:
 $$ C = P_1 + P_2 + P_3 + P_4, $$
 where:
 \begin{itemize}
@@ -93,21 +93,21 @@ where:
   right hand side of the clause.
 \item $P_3$ measures the complexity of relations between the
   subproblems. Markusz and Kaposi suggested that $2$ should be added
-  here for every recursive call of the defined predicate. Since the
+  here for every recursive call of the defined predicate. Because the
   set of Prolog operators that change the relationships between the
-  subproblems, I have decided to modify this approach by also adding
-  $1$ for each disjunction (introduced by the operator \texttt{;}) and
-  implication (introduced by operators \texttt{->} and
-  \texttt{*->}).
+  subproblems has changed since their work, I have decided to modify
+  this approach by also adding $1$ for each disjunction (introduced by
+  the operator \texttt{;}) and implication (introduced by operators
+  \texttt{->} and \texttt{*->}).
 \item $P_4$ is the number of variables introduced in the right hand
   side of the clause.
 \end{itemize}
 However in the original work the measure was only applied to clauses, 
-in MFPL it is also used to measure facts and commands. 
+in \emph{MFPL} it is also used to measure facts and commands. 
 
 \section{Halstead's metrics}
 
-Halstead \cite{halstead} proposed metrics for analysing the effort one
+Halstead\cite{halstead} proposed metrics for analysing the effort one
 needs to make to code a program and then maintain it. The metrics are
 largely based on psychological research of how one understands a
 program by making ``mental comparisons'' of tokens.
@@ -156,7 +156,7 @@ metrics of code, including:
 $$T = E/18,$$ which is the time needed to ``mentally'' implement the
   program, in seconds. The constant $18$ was set by experiment for
   procedural languages such as Java; for Prolog, it has to be changed
-  to a lower value since the language syntax is simpler. In MFPL, 
+  to a lower value since the language syntax is simpler. In \emph{MFPL}, 
   the constant has been set to $12$.
 \item[Bugs]
 $$B = E^{\frac{2}{3}}/3000,$$ which is the number of bugs that are
@@ -166,7 +166,7 @@ $$B = E^{\frac{2}{3}}/3000,$$ which is the number of bugs that are
 \subsection{Operators and operands}
 The main problem with Halstead's metrics, however, is the definition
 of what is an operator and what is an operand. For popular languages,
-those notions have been thoroughly discussed. Nandy \cite{nandy} sums
+those notions have been thoroughly discussed. Nandy\cite{nandy} sums
 up what seems to be the most common understanding of what operators
 and operands are in C, C++ and Java. 
 
@@ -251,7 +251,7 @@ treated as operators:
 Halstead's metrics heavily rely on which operands and operators we
 consider to be \emph{the same}. Whereas this is no problem with
 operators, atoms and integers, it becomes problematic when it comes to
-variables. In MFPL, I decided to make the following assumptions:
+variables. In \emph{MFPL}, I decided to make the following assumptions:
 \begin{itemize}
 \item Variables occurring in different clauses of the same predicate
   are considered distinct, even if they have the same name. This is
@@ -266,7 +266,7 @@ variables. In MFPL, I decided to make the following assumptions:
   an argument of a term and only then can they consider it irrelevant.
 \end{itemize}
 
-\subsection{Other metrics}
+\section{Other metrics}
 
 Logic-based programming strongly differs from imperative programming
 in that the programmer states a problem and lets the built-in
@@ -295,7 +295,7 @@ in the execution tree.
 
 Such problems multiply when more complex language constructs are
 considered. Therefore, I did not attempt to include McCabe's metric,
-or other ``procedural'' metrics, in MFPL.
+or other ``procedural'' metrics, in \emph{MFPL}.
 
 \end{multicols}
 
@@ -306,21 +306,21 @@ or other ``procedural'' metrics, in MFPL.
   W.F. Clocksin, C.S. Mellish, 
   \emph{Programming in Prolog}, 
   Springer-Verlag Telos, 1994.
-\bibitem{markusz}
-  Z. Markusz and A.A. Kaposi 
-  \emph{Complexity Control in Logic-based Programming},
-  The Computer Journal, 28: pp. 487-495, 1985.
 \bibitem{halstead}
   M.H. Halstead, 
   \emph{Elements of Software Science}, 
   Elsevier, North-Holland, New York, 1977.
-\bibitem{nandy}
-  I. Nandy, 
-  \emph{Halstead's Operators and Operands}
-  Scribd.com, 2007.
+\bibitem{markusz}
+  Z. Markusz and A.A. Kaposi 
+  \emph{Complexity Control in Logic-based Programming},
+  The Computer Journal, 28: pp. 487-495, 1985.
 \bibitem{mccabe}
   T.J. McCabe, 
   \emph{A Complexity Measure}, 
   IEEE Transactions on Software Engineering: pp. 308–320, 1976.
+\bibitem{nandy}
+  I. Nandy, 
+  \emph{Halstead's Operators and Operands}
+  Scribd.com, 2007.
 \end{thebibliography}
 \end{document}
