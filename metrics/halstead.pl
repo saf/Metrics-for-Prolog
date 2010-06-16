@@ -77,9 +77,10 @@ subterm_vocab(T, V, W) :-
 	length(Args, L),
 	Commas is L - 1,
 	add_operand(V, S, V1),
-	add_operator(V1, '()', V2),
-	add_operators(V2, ',', Commas, V3), 
-	subterms_vocab(Args, V3, W).
+	add_operator(V1, '(', V2),
+	add_operator(V2, ')', V3),
+	add_operators(V3, ',', Commas, V4), 
+	subterms_vocab(Args, V4, W).
 subterm_vocab(T, V, W) :-
 	var(T),
 	!,
@@ -166,7 +167,7 @@ vocab_metrics(V, [length(Length), vocabulary(Vocabulary),
 	Volume is Length * log(Vocabulary) / log(2),
 	Difficulty is (UniqueOperators * AllOperands) / (UniqueOperands * 2),
 	Effort is Volume * Difficulty,
-	Time is Effort / 10.
+	Time is Effort / 12.
 
 % all_operands(+V, -AO)
 %   Unify AO with the number of all operands in the vocabulary V

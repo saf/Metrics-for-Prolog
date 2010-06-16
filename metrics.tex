@@ -154,7 +154,10 @@ metrics of code, including:
 \begin{description}
 \item[Time]
 $$T = E/18,$$ which is the time needed to ``mentally'' implement the
-  program, in seconds.
+  program, in seconds. The constant $18$ was set by experiment for
+  procedural languages such as Java; for Prolog, it has to be changed
+  to a lower value since the language syntax is simpler. In MFPL, 
+  the constant has been set to $12$.
 \item[Bugs]
 $$B = E^{\frac{2}{3}}/3000,$$ which is the number of bugs that are
   delivered, on average, inside the program.
@@ -234,7 +237,7 @@ There are also a few purely syntactical tokens that will also be
 treated as operators:
 \begin{itemize}
 \item the pair of parentheses $()$ surrounding a symbol's arguments
-  will be viewed as a single operator,
+  will be viewed as two distinct operators.
 \item every comma between arguments of a term will be viewed as an
   operator.
 \item the dot that stands after every Prolog term will be viewed as a
